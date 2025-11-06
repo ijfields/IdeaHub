@@ -1,0 +1,436 @@
+/**
+ * Profile Page Component
+ *
+ * User profile page with view and edit modes.
+ * Features:
+ * - Display user avatar, name, email, bio, join date
+ * - Show user statistics (projects submitted, comments made)
+ * - Edit mode for display name and bio
+ * - Loading skeleton while fetching data
+ * - Error handling with toast notifications
+ * - Protected route (requires authentication)
+ */
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { formatDistanceToNow } from 'date-fns';
+import { User as UserIcon, Mail, Calendar, Edit2, Save, X, Loader2 } from 'lucide-react';
+
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+
+/**
+ * Profile edit form validation schema
+ */
+const profileSchema = z.object({
+  displayName: z
+    .string()
+    .min(2, 'Display name must be at least 2 characters')
+    .max(50, 'Display name must be less than 50 characters')
+    .regex(
+      /^[a-zA-Z0-9 _-]+$/,
+      'Display name can only contain letters, numbers, spaces, hyphens, and underscores'
+    ),
+  bio: z
+    .string()
+    .max(500, 'Bio must be less than 500 characters')
+    .optional()
+    .nullable(),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
+/**
+ * User statistics interface
+ */
+interface UserStats {
+  projectsCount: number;
+  commentsCount: number;
+}
+
+/**
+ * Profile Page Component
+ */
+export default function Profile() {
+  const navigate = useNavigate();
+  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [userStats, setUserStats] = useState<UserStats>({
+    projectsCount: 0,
+    commentsCount: 0,
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+  });
+
+  /**
+   * Redirect to login if not authenticated
+   */
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
+
+  /**
+   * Load user profile data and stats
+   */
+  useEffect(() => {
+    if (profile) {
+      // Reset form with current profile data
+      reset({
+        displayName: profile.display_name || '',
+        bio: profile.bio || '',
+      });
+
+      // Fetch user statistics
+      fetchUserStats();
+    }
+  }, [profile, reset]);
+
+  /**
+   * Fetch user statistics (projects and comments count)
+   */
+  const fetchUserStats = async () => {
+    if (!user) return;
+
+    try {
+      setIsLoadingStats(true);
+
+      // Fetch projects count
+      const { count: projectsCount, error: projectsError } = await supabase
+        .from('project_links')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (projectsError) throw projectsError;
+
+      // Fetch comments count
+      const { count: commentsCount, error: commentsError } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (commentsError) throw commentsError;
+
+      setUserStats({
+        projectsCount: projectsCount || 0,
+        commentsCount: commentsCount || 0,
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  /**
+   * Handle profile update
+   */
+  const onSubmit = async (data: ProfileFormValues) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          display_name: data.displayName,
+          bio: data.bio || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Refresh profile data
+      await refreshProfile();
+
+      // Show success toast
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been successfully updated.',
+      });
+
+      // Exit edit mode
+      setIsEditing(false);
+    } catch (error: any) {
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Failed to update profile. Please try again.',
+      });
+    }
+  };
+
+  /**
+   * Handle cancel edit
+   */
+  const handleCancelEdit = () => {
+    reset({
+      displayName: profile?.display_name || '',
+      bio: profile?.bio || '',
+    });
+    setIsEditing(false);
+  };
+
+  /**
+   * Get user initials for avatar
+   */
+  const getUserInitials = () => {
+    const name = profile?.display_name || profile?.email || 'U';
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  /**
+   * Loading skeleton
+   */
+  if (authLoading || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
+        <div className="max-w-4xl mx-auto pt-12">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-20 w-20 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-48" />
+                </div>
+              </div>
+              <Skeleton className="h-32 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
+      <div className="max-w-4xl mx-auto pt-12">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl">My Profile</CardTitle>
+                <CardDescription>
+                  Manage your account information and view your activity
+                </CardDescription>
+              </div>
+              {!isEditing && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent className="space-y-6">
+              {/* Avatar and Basic Info */}
+              <div className="flex items-start gap-6">
+                <Avatar className="h-20 w-20 text-xl">
+                  <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 space-y-4">
+                  {/* Display Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="displayName" className="flex items-center gap-2">
+                      <UserIcon className="h-4 w-4" />
+                      Display Name
+                    </Label>
+                    {isEditing ? (
+                      <>
+                        <Input
+                          id="displayName"
+                          placeholder="Your display name"
+                          disabled={isSubmitting}
+                          {...register('displayName')}
+                        />
+                        {errors.displayName && (
+                          <p className="text-sm text-destructive">
+                            {errors.displayName.message}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-lg font-medium">
+                        {profile.display_name || 'No name set'}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Email (non-editable) */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Email
+                    </Label>
+                    <p className="text-sm text-muted-foreground">{profile.email}</p>
+                  </div>
+
+                  {/* Join Date */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Member Since
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDistanceToNow(new Date(profile.created_at), {
+                        addSuffix: true,
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                {isEditing ? (
+                  <>
+                    <Textarea
+                      id="bio"
+                      placeholder="Tell us about yourself..."
+                      rows={4}
+                      disabled={isSubmitting}
+                      {...register('bio')}
+                    />
+                    {errors.bio && (
+                      <p className="text-sm text-destructive">
+                        {errors.bio.message}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {profile.bio || 'No bio added yet'}
+                  </p>
+                )}
+              </div>
+
+              {/* User Statistics */}
+              <div>
+                <Label className="mb-3 block">Activity Statistics</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-primary">
+                          {isLoadingStats ? (
+                            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                          ) : (
+                            userStats.projectsCount
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Projects Submitted
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-primary">
+                          {isLoadingStats ? (
+                            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                          ) : (
+                            userStats.commentsCount
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Comments Made
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Tier Badge */}
+              <div className="space-y-2">
+                <Label>Account Tier</Label>
+                <div>
+                  <Badge variant="secondary" className="text-sm">
+                    {profile.tier === 'free' ? 'Free' : 'Premium'} Member
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+
+            {/* Edit Mode Actions */}
+            {isEditing && (
+              <CardFooter className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            )}
+          </form>
+        </Card>
+      </div>
+    </div>
+  );
+}
