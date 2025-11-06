@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working in This Repository
+
+**Always read PLANNING.md at the start of every new conversation.**
+
+**Check TASKS.md before starting work, mark completed tasks immediately, and add newly discovered tasks as you go.**
+
 ## Project Overview
 
 **AI Ideas Hub** is a closed-beta MVP platform showcasing 87 curated AI project ideas for professionals cautious about AI adoption. The platform leverages the Anthropic Claude Code promotion (ending November 18, 2025) to drive user acquisition with a campaign goal of **4,000 projects completed** by campaign end.
