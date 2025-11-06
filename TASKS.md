@@ -9,7 +9,7 @@
 ## Milestone 1: Project Setup & Infrastructure (Week 1)
 
 ### Environment & Tooling Setup
-- [ ] Initialize frontend repository with Vite + React 18
+- [x] Initialize frontend repository with Vite + React 18
 - [ ] Configure Tailwind CSS with custom theme
 - [ ] Install and configure shadcn/ui component library
 - [ ] Initialize backend repository with Node.js + Express.js
