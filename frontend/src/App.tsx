@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/query-client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,8 +20,9 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
 
   return (
-    <div className={darkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+    <QueryClientProvider client={queryClient}>
+      <div className={darkMode ? 'dark' : ''}>
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
         {/* Header */}
         <header className="border-b border-border">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -167,7 +170,8 @@ function App() {
           </div>
         </footer>
       </div>
-    </div>
+      </div>
+    </QueryClientProvider>
   );
 }
 

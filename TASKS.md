@@ -103,8 +103,8 @@
 
 ### Project Structure & Routing
 - [ ] Set up React Router v6 with route configuration
-- [ ] Create layout components (Header, Footer, Sidebar)
-- [ ] Implement responsive navigation menu
+- [x] Create layout components (Header, Footer, Sidebar)
+- [x] Implement responsive navigation menu
 - [ ] Create 404 Not Found page
 - [ ] Set up protected route wrapper for auth-required pages
 - [ ] Create route guards for tier-based access
@@ -271,8 +271,8 @@
 ## Milestone 7: Additional Features & Polish (Week 5)
 
 ### News Banner & Campaign Messaging
-- [ ] Create dismissible news banner component
-- [ ] Add Anthropic promotion announcement
+- [x] Create dismissible news banner component
+- [x] Add Anthropic promotion announcement
 - [ ] Display campaign end date countdown
 - [ ] Show tips for using Claude credits
 - [ ] Feature highlighted projects in banner
