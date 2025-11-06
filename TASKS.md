@@ -13,11 +13,11 @@
 - [x] Configure Tailwind CSS with custom theme
 - [x] Install and configure shadcn/ui component library
 - [x] Initialize backend repository with Node.js + Express.js
-- [ ] Set up TypeScript for both frontend and backend
-- [ ] Create `.env.example` files for environment variables
-- [ ] Configure ESLint and Prettier for code quality
+- [x] Set up TypeScript for both frontend and backend
+- [x] Create `.env.example` files for environment variables
+- [x] Configure ESLint and Prettier for code quality
 - [ ] Set up Git workflow and branching strategy
-- [ ] Create `.gitignore` for both frontend and backend
+- [x] Create `.gitignore` for both frontend and backend
 
 ### Supabase Setup
 - [ ] Create Supabase project and obtain credentials

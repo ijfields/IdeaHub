@@ -1,8 +1,12 @@
+import { Request, Response, NextFunction, RequestHandler } from 'express';
+
 /**
  * Custom error class for API errors
  */
 export class ApiError extends Error {
-  constructor(statusCode, message, name = 'ApiError') {
+  statusCode: number;
+
+  constructor(statusCode: number, message: string, name = 'ApiError') {
     super(message);
     this.statusCode = statusCode;
     this.name = name;
@@ -55,8 +59,8 @@ export const internalError = (message = 'Internal Server Error') => {
 /**
  * Async handler wrapper to catch errors in async route handlers
  */
-export const asyncHandler = (fn) => {
-  return (req, res, next) => {
+export const asyncHandler = (fn: RequestHandler): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };

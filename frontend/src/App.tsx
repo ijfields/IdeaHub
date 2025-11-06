@@ -1,14 +1,21 @@
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import './App.css'
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [darkMode, setDarkMode] = useState(false)
+  const [count, setCount] = useState(0);
+  const [darkMode, setDarkMode] = useState(false);
 
   return (
     <div className={darkMode ? 'dark' : ''}>
@@ -17,16 +24,10 @@ function App() {
         <header className="border-b border-border">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                IdeaHub
-              </h1>
+              <h1 className="text-2xl font-bold text-primary-600 dark:text-primary-400">IdeaHub</h1>
               <Badge variant="secondary">Beta</Badge>
             </div>
-            <Button
-              onClick={() => setDarkMode(!darkMode)}
-              variant="outline"
-              size="sm"
-            >
+            <Button onClick={() => setDarkMode(!darkMode)} variant="outline" size="sm">
               {darkMode ? '☀️ Light' : '🌙 Dark'}
             </Button>
           </div>
@@ -36,9 +37,7 @@ function App() {
         <main className="max-w-7xl mx-auto px-4 py-12">
           {/* Welcome Section */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">
-              shadcn/ui Configuration Complete
-            </h1>
+            <h1 className="text-4xl font-bold mb-4">shadcn/ui Configuration Complete</h1>
             <p className="text-muted-foreground text-lg">
               Professional component library ready for IdeaHub development
             </p>
@@ -50,16 +49,22 @@ function App() {
             <Card>
               <CardHeader>
                 <CardTitle>Button Component</CardTitle>
-                <CardDescription>
-                  Multiple variants and sizes available
-                </CardDescription>
+                <CardDescription>Multiple variants and sizes available</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button className="w-full">Default Button</Button>
-                <Button variant="secondary" className="w-full">Secondary</Button>
-                <Button variant="outline" className="w-full">Outline</Button>
-                <Button variant="ghost" className="w-full">Ghost</Button>
-                <Button variant="destructive" className="w-full">Destructive</Button>
+                <Button variant="secondary" className="w-full">
+                  Secondary
+                </Button>
+                <Button variant="outline" className="w-full">
+                  Outline
+                </Button>
+                <Button variant="ghost" className="w-full">
+                  Ghost
+                </Button>
+                <Button variant="destructive" className="w-full">
+                  Destructive
+                </Button>
               </CardContent>
             </Card>
 
@@ -67,9 +72,7 @@ function App() {
             <Card>
               <CardHeader>
                 <CardTitle>Input Component</CardTitle>
-                <CardDescription>
-                  Form controls with proper styling
-                </CardDescription>
+                <CardDescription>Form controls with proper styling</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -90,9 +93,7 @@ function App() {
             <Card>
               <CardHeader>
                 <CardTitle>Badge Component</CardTitle>
-                <CardDescription>
-                  Tags and status indicators
-                </CardDescription>
+                <CardDescription>Tags and status indicators</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-2">
@@ -115,33 +116,18 @@ function App() {
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle>Interactive Demo</CardTitle>
-              <CardDescription>
-                Counter with shadcn/ui Button component
-              </CardDescription>
+              <CardDescription>Counter with shadcn/ui Button component</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <div className="text-6xl font-bold mb-6 text-primary">
-                {count}
-              </div>
+              <div className="text-6xl font-bold mb-6 text-primary">{count}</div>
               <div className="flex gap-3 justify-center">
-                <Button
-                  onClick={() => setCount(count - 1)}
-                  variant="outline"
-                  size="lg"
-                >
+                <Button onClick={() => setCount(count - 1)} variant="outline" size="lg">
                   Decrease
                 </Button>
-                <Button
-                  onClick={() => setCount(0)}
-                  variant="secondary"
-                  size="lg"
-                >
+                <Button onClick={() => setCount(0)} variant="secondary" size="lg">
                   Reset
                 </Button>
-                <Button
-                  onClick={() => setCount(count + 1)}
-                  size="lg"
-                >
+                <Button onClick={() => setCount(count + 1)} size="lg">
                   Increase
                 </Button>
               </div>
@@ -182,7 +168,7 @@ function App() {
         </footer>
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

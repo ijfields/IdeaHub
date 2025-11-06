@@ -1,10 +1,11 @@
+import { Request, Response, NextFunction } from 'express';
 import supabase from '../config/supabase.js';
 
 /**
  * Middleware to verify JWT token from Supabase Auth
  * Extracts user information and attaches to req.user
  */
-export const authenticate = async (req, res, next) => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -18,7 +19,10 @@ export const authenticate = async (req, res, next) => {
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // Verify token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
     if (error || !user) {
       return res.status(401).json({
@@ -45,13 +49,16 @@ export const authenticate = async (req, res, next) => {
  * Optional authentication middleware
  * Attaches user if token is valid, but doesn't fail if missing
  */
-export const optionalAuth = async (req, res, next) => {
+export const optionalAuth = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser(token);
 
       if (!error && user) {
         req.user = user;

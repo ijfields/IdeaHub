@@ -1,9 +1,10 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/index.js';
+import { ApiError } from './utils/errors.js';
 
 // Load environment variables
 dotenv.config();
@@ -20,7 +21,7 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -33,7 +34,7 @@ app.get('/health', (req, res) => {
 app.use('/api', apiRoutes);
 
 // 404 handler - must come after all other routes
-app.use((req, res) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({
     error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,
@@ -42,10 +43,10 @@ app.use((req, res) => {
 });
 
 // Global error handling middleware - must come last
-app.use((err, req, res, next) => {
+app.use((err: ApiError | Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Error:', err);
 
-  const statusCode = err.statusCode || 500;
+  const statusCode = (err as ApiError).statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
   res.status(statusCode).json({
@@ -77,7 +78,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('Uncaught Exception:', error);
   process.exit(1);
 });

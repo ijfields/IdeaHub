@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 
 const router = express.Router();
 
@@ -6,7 +6,7 @@ const router = express.Router();
  * Base API route
  * GET /api
  */
-router.get('/', (req, res) => {
+router.get('/', (_req: Request, res: Response) => {
   res.json({
     message: 'IdeaHub API',
     version: process.env.API_VERSION || 'v1',
