@@ -20,16 +20,16 @@
 - [x] Create `.gitignore` for both frontend and backend
 
 ### Supabase Setup
-- [ ] Create Supabase project and obtain credentials
-- [ ] Configure Supabase Auth settings
-- [ ] Set up database schema with migrations
-- [ ] Create `ideas` table with all required fields
-- [ ] Create `users` profile extension table
-- [ ] Create `comments` table with nested comment support
-- [ ] Create `project_links` table
-- [ ] Create `page_views` table for analytics
-- [ ] Set up Row Level Security (RLS) policies
-- [ ] Configure database indexes for performance
+- [x] Create Supabase project and obtain credentials
+- [x] Configure Supabase Auth settings
+- [x] Set up database schema with migrations
+- [x] Create `ideas` table with all required fields
+- [x] Create `users` profile extension table
+- [x] Create `comments` table with nested comment support
+- [x] Create `project_links` table
+- [x] Create `page_views` table for analytics
+- [x] Set up Row Level Security (RLS) policies
+- [x] Configure database indexes for performance
 
 ### Project Documentation
 - [ ] Create comprehensive README.md with setup instructions
