@@ -43,59 +43,59 @@
 ## Milestone 2: Backend Development (Weeks 1-2)
 
 ### API Foundation
-- [ ] Set up Express.js server structure
-- [ ] Configure CORS for frontend communication
-- [ ] Implement error handling middleware
-- [ ] Set up request validation with express-validator
-- [ ] Configure logging (Winston or similar)
-- [ ] Create API documentation structure (OpenAPI/Swagger)
+- [x] Set up Express.js server structure
+- [x] Configure CORS for frontend communication
+- [x] Implement error handling middleware
+- [x] Set up request validation with express-validator
+- [ ] Configure logging (Winston or similar) - morgan is configured but not Winston
+- [x] Create API documentation structure (OpenAPI/Swagger)
 
 ### Authentication & Authorization
-- [ ] Integrate Supabase Auth SDK
-- [ ] Create authentication middleware
-- [ ] Implement JWT verification
+- [x] Integrate Supabase Auth SDK
+- [x] Create authentication middleware
+- [x] Implement JWT verification
 - [ ] Create role-based access control (RBAC) middleware
-- [ ] Build guest vs. registered user logic
-- [ ] Implement session management
+- [x] Build guest vs. registered user logic
+- [x] Implement session management
 
 ### Ideas API Endpoints
-- [ ] `GET /api/ideas` - List all ideas (with tier filtering)
-- [ ] `GET /api/ideas/:id` - Get single idea details
-- [ ] `GET /api/ideas/search` - Search ideas by keyword
-- [ ] `GET /api/ideas/category/:category` - Filter by category
-- [ ] `GET /api/ideas/free-tier` - Get 5 featured free ideas
-- [ ] `PATCH /api/ideas/:id/view` - Increment view count
-- [ ] Implement pagination for ideas list
-- [ ] Add sorting options (popular, recent, difficulty)
+- [x] `GET /api/ideas` - List all ideas (with tier filtering)
+- [x] `GET /api/ideas/:id` - Get single idea details
+- [x] `GET /api/ideas/search` - Search ideas by keyword
+- [x] `GET /api/ideas/category/:category` - Filter by category
+- [x] `GET /api/ideas/free-tier` - Get 5 featured free ideas
+- [x] `PATCH /api/ideas/:id/view` - Increment view count
+- [x] Implement pagination for ideas list
+- [x] Add sorting options (popular, recent, difficulty)
 
 ### Comments API Endpoints
-- [ ] `GET /api/ideas/:id/comments` - Get all comments for an idea
-- [ ] `POST /api/comments` - Create new comment (auth required)
-- [ ] `POST /api/comments/:id/reply` - Reply to comment (auth required)
-- [ ] `PATCH /api/comments/:id` - Update comment (author only)
-- [ ] `DELETE /api/comments/:id` - Delete comment (author/admin only)
-- [ ] `POST /api/comments/:id/flag` - Flag comment for moderation
+- [x] `GET /api/ideas/:id/comments` - Get all comments for an idea
+- [x] `POST /api/comments` - Create new comment (auth required)
+- [x] `POST /api/comments/:id/reply` - Reply to comment (auth required)
+- [x] `PATCH /api/comments/:id` - Update comment (author only)
+- [x] `DELETE /api/comments/:id` - Delete comment (author/admin only)
+- [x] `POST /api/comments/:id/flag` - Flag comment for moderation
 
 ### Project Links API Endpoints
-- [ ] `GET /api/ideas/:id/projects` - Get all project links for an idea
-- [ ] `POST /api/projects` - Submit new project link (auth required)
-- [ ] `PATCH /api/projects/:id` - Update project link (author only)
-- [ ] `DELETE /api/projects/:id` - Delete project link (author/admin only)
-- [ ] `GET /api/projects/stats` - Get project count statistics
+- [x] `GET /api/ideas/:id/projects` - Get all project links for an idea
+- [x] `POST /api/projects` - Submit new project link (auth required)
+- [x] `PATCH /api/projects/:id` - Update project link (author only)
+- [x] `DELETE /api/projects/:id` - Delete project link (author/admin only)
+- [x] `GET /api/projects/stats` - Get project count statistics
 
 ### User Profile API Endpoints
-- [ ] `GET /api/users/:id/profile` - Get user profile
-- [ ] `PATCH /api/users/profile` - Update own profile
-- [ ] `GET /api/users/:id/projects` - Get user's submitted projects
-- [ ] `GET /api/users/:id/comments` - Get user's comment history
+- [x] `GET /api/users/:id/profile` - Get user profile
+- [x] `PATCH /api/users/profile` - Update own profile
+- [x] `GET /api/users/:id/projects` - Get user's submitted projects
+- [x] `GET /api/users/:id/comments` - Get user's comment history
 
 ### Analytics & Metrics API
-- [ ] `POST /api/metrics/page-view` - Track page views
-- [ ] `GET /api/metrics/dashboard` - Get admin dashboard data
-- [ ] `GET /api/metrics/projects-goal` - Get progress toward 4k goal
-- [ ] `GET /api/metrics/tool-usage` - Get tool usage breakdown
-- [ ] `GET /api/metrics/export` - Export analytics (CSV/JSON)
-- [ ] Implement rate limiting for metrics endpoints
+- [x] `POST /api/metrics/page-view` - Track page views
+- [x] `GET /api/metrics/dashboard` - Get admin dashboard data
+- [x] `GET /api/metrics/projects-goal` - Get progress toward 4k goal
+- [x] `GET /api/metrics/tool-usage` - Get tool usage breakdown
+- [x] `GET /api/metrics/export` - Export analytics (CSV/JSON)
+- [x] Implement rate limiting for metrics endpoints
 
 ---
 
