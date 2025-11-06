@@ -13,26 +13,45 @@ router.get('/', (_req: Request, res: Response) => {
     endpoints: {
       health: '/health',
       api: '/api',
+      users: '/api/users',
+      projects: '/api/projects',
+      projectsByIdea: '/api/ideas/:ideaId/projects',
+      projectStats: '/api/projects/stats',
+      comments: '/api/comments',
+      commentsByIdea: '/api/ideas/:ideaId/comments',
+      metrics: '/api/metrics',
+      metricsPageView: '/api/metrics/page-view',
+      metricsDashboard: '/api/metrics/dashboard',
+      metricsProjectsGoal: '/api/metrics/projects-goal',
+      metricsToolUsage: '/api/metrics/tool-usage',
+      metricsExport: '/api/metrics/export',
+      ideas: '/api/ideas',
       // Future endpoints will be listed here
-      // ideas: '/api/ideas',
-      // comments: '/api/comments',
-      // projects: '/api/projects',
       // auth: '/api/auth',
     },
     documentation: 'https://github.com/yourusername/IdeaHub',
   });
 });
 
+// Route imports
+import usersRouter from './users.js';
+import projectsRouter from './projects.js';
+import commentsRouter from './comments.js';
+import metricsRouter from './metrics.js';
+import ideasRouter from './ideas.js';
+
 // Future route imports will go here
-// import ideasRouter from './ideas.js';
-// import commentsRouter from './comments.js';
-// import projectsRouter from './projects.js';
 // import authRouter from './auth.js';
 
+// Mount routers
+router.use('/users', usersRouter);
+router.use('/projects', projectsRouter);
+router.use('/', commentsRouter); // Mounts /comments and /ideas/:ideaId/comments routes
+router.use('/ideas', ideasRouter); // Main ideas routes
+router.use('/ideas', projectsRouter); // For /api/ideas/:ideaId/projects route
+router.use('/metrics', metricsRouter);
+
 // Future route mounting will go here
-// router.use('/ideas', ideasRouter);
-// router.use('/comments', commentsRouter);
-// router.use('/projects', projectsRouter);
 // router.use('/auth', authRouter);
 
 export default router;
