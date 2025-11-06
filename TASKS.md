@@ -10,9 +10,9 @@
 
 ### Environment & Tooling Setup
 - [x] Initialize frontend repository with Vite + React 18
-- [ ] Configure Tailwind CSS with custom theme
-- [ ] Install and configure shadcn/ui component library
-- [ ] Initialize backend repository with Node.js + Express.js
+- [x] Configure Tailwind CSS with custom theme
+- [x] Install and configure shadcn/ui component library
+- [x] Initialize backend repository with Node.js + Express.js
 - [ ] Set up TypeScript for both frontend and backend
 - [ ] Create `.env.example` files for environment variables
 - [ ] Configure ESLint and Prettier for code quality
