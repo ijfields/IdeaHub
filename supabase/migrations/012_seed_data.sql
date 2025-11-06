@@ -84,7 +84,7 @@ INSERT INTO ideas (
     difficulty,
     tools,
     tags,
-    monotization_potential,
+    monetization_potential,
     estimated_build_time,
     free_tier
 ) VALUES (
