@@ -67,17 +67,20 @@ class ApiClient {
     this.client.interceptors.request.use(
       async (config) => {
         try {
-          // Get current session from Supabase
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
+          // Only try to get session if Supabase is properly configured
+          if (supabase && typeof supabase.auth?.getSession === 'function') {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
 
-          // Add auth token to request if available
-          if (session?.access_token) {
-            config.headers.Authorization = `Bearer ${session.access_token}`;
+            // Add auth token to request if available
+            if (session?.access_token) {
+              config.headers.Authorization = `Bearer ${session.access_token}`;
+            }
           }
         } catch (error) {
-          console.error('Error getting session:', error);
+          // Silently fail - don't block requests if auth fails
+          console.warn('Error getting session for API request:', error);
         }
 
         return config;
@@ -131,6 +134,14 @@ class ApiClient {
    * Fetch all ideas with optional filtering and pagination
    */
   async getIdeas(params?: IdeaFilters): Promise<ApiResponse<Idea[]>> {
+    if (!this.client) {
+      console.error('API client error: this.client is undefined', { 
+        hasClient: !!this.client,
+        clientType: typeof this.client,
+        thisType: typeof this,
+      });
+      throw new Error('API client not initialized');
+    }
     const response = await this.client.get<ApiResponse<Idea[]>>('/ideas', {
       params,
     });
@@ -354,27 +365,60 @@ class ApiClient {
 }
 
 // Export a singleton instance
-export const apiClient = new ApiClient();
+const apiClientInstance = new ApiClient();
 
-// Export individual API functions for convenience
-export const {
-  getIdeas,
-  getIdeaById,
-  searchIdeas,
-  incrementView,
-  getComments,
-  createComment,
-  updateComment,
-  deleteComment,
-  getProjects,
-  createProject,
-  updateProject,
-  deleteProject,
-  getProfile,
-  updateProfile,
-  trackPageView,
-  getMetrics,
-} = apiClient;
+// Export the instance
+export const apiClient = apiClientInstance;
+
+// Export individual API functions - ensure proper 'this' binding
+export const getIdeas = async (params?: IdeaFilters) => {
+  return apiClientInstance.getIdeas.call(apiClientInstance, params);
+};
+export const getIdeaById = async (id: string) => {
+  return apiClientInstance.getIdeaById.call(apiClientInstance, id);
+};
+export const searchIdeas = async (query: string, params?: PaginationParams) => {
+  return apiClientInstance.searchIdeas.call(apiClientInstance, query, params);
+};
+export const incrementView = async (ideaId: string) => {
+  return apiClientInstance.incrementView.call(apiClientInstance, ideaId);
+};
+export const getComments = async (ideaId: string) => {
+  return apiClientInstance.getComments.call(apiClientInstance, ideaId);
+};
+export const createComment = async (ideaId: string, content: string, parentCommentId?: string) => {
+  return apiClientInstance.createComment.call(apiClientInstance, ideaId, content, parentCommentId);
+};
+export const updateComment = async (commentId: string, content: string) => {
+  return apiClientInstance.updateComment.call(apiClientInstance, commentId, content);
+};
+export const deleteComment = async (commentId: string) => {
+  return apiClientInstance.deleteComment.call(apiClientInstance, commentId);
+};
+export const getProjects = async (ideaId: string) => {
+  return apiClientInstance.getProjects.call(apiClientInstance, ideaId);
+};
+export const createProject = async (ideaId: string, data: { title: string; url: string; description?: string; tools_used: string[] }) => {
+  return apiClientInstance.createProject.call(apiClientInstance, ideaId, data);
+};
+export const updateProject = async (projectId: string, data: { title?: string; url?: string; description?: string; tools_used?: string[] }) => {
+  return apiClientInstance.updateProject.call(apiClientInstance, projectId, data);
+};
+export const deleteProject = async (projectId: string) => {
+  return apiClientInstance.deleteProject.call(apiClientInstance, projectId);
+};
+export const getProfile = async () => {
+  return apiClientInstance.getProfile.call(apiClientInstance);
+};
+export const updateProfile = async (data: { display_name?: string; bio?: string }) => {
+  return apiClientInstance.updateProfile.call(apiClientInstance, data);
+};
+export const trackPageView = async (page: string, ideaId?: string) => {
+  return apiClientInstance.trackPageView.call(apiClientInstance, page, ideaId);
+};
+export const getMetrics = async () => {
+  return apiClientInstance.getMetrics.call(apiClientInstance);
+};
 
 // Export types for use in hooks
 export type { IdeaFilters, PaginationParams };

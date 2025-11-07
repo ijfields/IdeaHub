@@ -27,6 +27,7 @@ import Signup from '@/pages/Signup';
 import Profile from '@/pages/Profile';
 import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
+import ThemeTest from '@/pages/ThemeTest';
 
 /**
  * Router configuration using createBrowserRouter
@@ -42,6 +43,10 @@ const router = createBrowserRouter([
     path: '/',
     element: <Home />,
     errorElement: <NotFound />,
+  },
+  {
+    path: '/theme-test',
+    element: <ThemeTest />,
   },
   {
     path: '/ideas',

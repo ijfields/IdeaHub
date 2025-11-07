@@ -3,6 +3,9 @@
  *
  * This module exports a configured QueryClient instance for managing
  * server state, caching, and data fetching across the application.
+ * 
+ * Based on official TanStack Query v5 documentation:
+ * https://tanstack.com/query/v5/docs/framework/react/guides/ssr
  */
 
 import { QueryClient } from '@tanstack/react-query';
@@ -30,6 +33,8 @@ import { QueryClient } from '@tanstack/react-query';
  * }
  * ```
  */
+
+// Create QueryClient following official documentation pattern
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -40,20 +45,20 @@ export const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 10,
 
       // Refetch data when window regains focus
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false,
 
       // Refetch data when reconnecting to the internet
       refetchOnReconnect: true,
 
       // Number of retry attempts for failed queries
-      retry: 3,
+      retry: 1,
 
       // Exponential backoff for retries
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
       // Number of retry attempts for failed mutations
-      retry: 1,
+      retry: 0,
 
       // Error handler for mutations
       onError: (error) => {

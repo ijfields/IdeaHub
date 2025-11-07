@@ -306,6 +306,53 @@ Refer to this document for:
 
 ---
 
+### Session 2: Styling Fixes & React 18 Downgrade (December 2024)
+
+**Branch:** `downgrade-react-18`  
+**Focus:** Fix Tailwind CSS v4 configuration, resolve React Query errors, restore professional styling
+
+**Problems Solved:**
+
+1. **Tailwind CSS v4 Configuration**
+   - Fixed CSS compilation by updating from old v3 syntax (`@tailwind base;`) to v4 syntax (`@import "tailwindcss";`)
+   - This was causing all styles to fail to compile, resulting in unstyled HTML
+
+2. **React Query API Client Errors**
+   - Fixed `TypeError: Cannot read properties of undefined (reading 'client')`
+   - Root cause: Methods destructured from class instance lost `this` context
+   - Solution: Used `.call(apiClientInstance, ...)` to explicitly bind `this` for all exported wrapper functions
+
+3. **React 19 Compatibility Issues**
+   - Downgraded React and React DOM from 19.1.1 to 18.3.1
+   - React Query v5 works better with React 18.x
+   - Resolved context provider and error boundary issues
+
+4. **Radix UI Select Component**
+   - Fixed error: `Select.Item` cannot have empty string value
+   - Changed `value=""` to `value="all"` and updated all filter logic
+
+5. **Accessibility Warnings**
+   - Added `SheetDescription` component to fix Radix UI accessibility warnings
+
+**Key Changes:**
+- Updated `frontend/src/index.css` to Tailwind v4 syntax
+- Fixed API client method binding in `frontend/src/lib/api-client.ts`
+- Updated all gradient buttons to use `.btn-gradient-link` CSS class
+- Created `/theme-test` static page for styling verification
+- Fixed Select component in IdeasList page
+
+**Files Modified:** 15+ files  
+**New Files:** ThemeTest.tsx, SESSION_SUMMARY_STYLING_FIXES.md  
+**Status:** ✅ Styling working, ready for testing
+
+**Key Learnings:**
+- Tailwind CSS v4 uses `@import "tailwindcss";` not `@tailwind` directives
+- React 18 is more stable with React Query v5 than React 19
+- Method binding requires explicit `.call()` when exporting wrapper functions
+- Static test pages help isolate styling from API issues
+
+---
+
 ## Tips for Future Sessions
 
 ### Using Subagent Orchestration

@@ -139,7 +139,17 @@ export default function Home() {
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
                 87 AI Project Ideas
                 <br />
-                <span className="text-primary">for Professionals</span>
+                <span 
+                  className="inline-block"
+                  style={{
+                    background: 'linear-gradient(to right, #2563eb, #60a5fa)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  for Professionals
+                </span>
               </h1>
               <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto">
                 Hands-on AI projects you can build with Claude, Bolt, or Lovable — no extensive
@@ -149,13 +159,21 @@ export default function Home() {
 
             {/* Hero CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" asChild className="text-lg px-8">
-                <Link to="/ideas">
+              <Button 
+                size="lg" 
+                asChild
+                variant="ghost"
+                className="text-lg px-8 shadow-lg hover:shadow-xl transition-all duration-300 group border-none"
+              >
+                <Link 
+                  to="/ideas" 
+                  className="flex items-center text-white rounded-md btn-gradient-link"
+                >
                   Browse 5 Free Ideas
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="text-lg px-8">
+              <Button size="lg" variant="outline" asChild className="text-lg px-8 border-2 hover:border-primary hover:text-primary transition-all duration-300">
                 <Link to="/signup">Get Full Access (Sign Up)</Link>
               </Button>
             </div>
@@ -164,7 +182,7 @@ export default function Home() {
 
         {/* Campaign Banner Section */}
         <section className="my-16">
-          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-accent/5 shadow-xl dark:shadow-2xl">
             <CardContent className="p-8">
               <div className="space-y-6">
                 {/* Campaign Header */}
@@ -207,8 +225,18 @@ export default function Home() {
 
                 {/* Campaign CTA */}
                 <div className="text-center pt-2">
-                  <Button asChild size="lg" className="font-semibold">
-                    <Link to="/signup">Join the Campaign</Link>
+                  <Button 
+                    asChild 
+                    size="lg"
+                    variant="ghost"
+                    className="font-semibold shadow-md hover:shadow-lg transition-all duration-300 text-white border-none"
+                  >
+                    <Link 
+                      to="/signup" 
+                      className="text-white rounded-md btn-gradient-link"
+                    >
+                      Join the Campaign
+                    </Link>
                   </Button>
                 </div>
               </div>
@@ -226,10 +254,11 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredIdeas.map((idea) => (
+            {featuredIdeas.map((idea, index) => (
               <Card
                 key={idea.id}
-                className="hover:shadow-lg transition-shadow duration-200 cursor-pointer group"
+                className="card-hover cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -252,10 +281,15 @@ export default function Home() {
                         </Badge>
                       ))}
                     </div>
-                    <Button asChild variant="outline" className="w-full" size="sm">
+                    <Button 
+                      asChild 
+                      variant="outline" 
+                      className="w-full group-hover:border-primary group-hover:text-primary transition-all duration-300" 
+                      size="sm"
+                    >
                       <Link to={`/ideas/${idea.id}`}>
                         View Details
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </Link>
                     </Button>
                   </div>
@@ -265,10 +299,18 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-8">
-            <Button asChild size="lg" variant="default">
-              <Link to="/signup">
+            <Button 
+              asChild 
+              size="lg"
+              variant="ghost"
+              className="shadow-lg hover:shadow-xl transition-all duration-300 group text-white border-none"
+            >
+              <Link 
+                to="/signup" 
+                className="flex items-center text-white rounded-md btn-gradient-link"
+              >
                 Sign Up for 82 More Ideas
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
           </div>
@@ -286,17 +328,22 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Step 1 */}
             <div className="relative">
-              <Card className="h-full text-center p-6">
+              <Card className="h-full text-center p-6 card-hover">
                 <div className="space-y-4">
                   <div className="flex justify-center">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
-                      <div className="relative bg-primary/10 rounded-full p-4">
+                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse-slow" />
+                      <div className="relative bg-primary/10 rounded-full p-4 group-hover:bg-primary/20 transition-colors">
                         <Lightbulb className="h-8 w-8 text-primary" />
                       </div>
                     </div>
                   </div>
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                  <div 
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md"
+                    style={{
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    }}
+                  >
                     1
                   </div>
                   <div className="space-y-2">
@@ -311,17 +358,22 @@ export default function Home() {
 
             {/* Step 2 */}
             <div className="relative">
-              <Card className="h-full text-center p-6">
+              <Card className="h-full text-center p-6 card-hover">
                 <div className="space-y-4">
                   <div className="flex justify-center">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
-                      <div className="relative bg-primary/10 rounded-full p-4">
+                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse-slow" />
+                      <div className="relative bg-primary/10 rounded-full p-4 group-hover:bg-primary/20 transition-colors">
                         <Sparkles className="h-8 w-8 text-primary" />
                       </div>
                     </div>
                   </div>
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                  <div 
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md"
+                    style={{
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    }}
+                  >
                     2
                   </div>
                   <div className="space-y-2">
@@ -336,17 +388,22 @@ export default function Home() {
 
             {/* Step 3 */}
             <div className="relative">
-              <Card className="h-full text-center p-6">
+              <Card className="h-full text-center p-6 card-hover">
                 <div className="space-y-4">
                   <div className="flex justify-center">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
-                      <div className="relative bg-primary/10 rounded-full p-4">
+                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse-slow" />
+                      <div className="relative bg-primary/10 rounded-full p-4 group-hover:bg-primary/20 transition-colors">
                         <Share2 className="h-8 w-8 text-primary" />
                       </div>
                     </div>
                   </div>
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                  <div 
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md"
+                    style={{
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    }}
+                  >
                     3
                   </div>
                   <div className="space-y-2">
@@ -377,17 +434,19 @@ export default function Home() {
                   to={`/ideas?category=${encodeURIComponent(category.name)}`}
                   className="group"
                 >
-                  <Card className="h-full hover:shadow-md hover:border-primary/50 transition-all duration-200 cursor-pointer">
+                  <Card className="h-full hover:shadow-lg hover:border-primary/50 transition-all duration-300 cursor-pointer group">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="bg-primary/10 rounded-lg p-2 group-hover:bg-primary/20 transition-colors">
                           <Icon className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
+                          <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors duration-300">
                             {category.name}
                           </p>
-                          <p className="text-xs text-muted-foreground">{category.count} ideas</p>
+                          <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
+                            {category.count} ideas
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -400,7 +459,7 @@ export default function Home() {
 
         {/* Stats Section */}
         <section className="my-16">
-          <Card className="bg-gradient-to-br from-primary/5 to-accent/5">
+          <Card className="bg-gradient-to-br from-primary/5 via-primary/3 to-accent/5 shadow-xl dark:shadow-2xl">
             <CardContent className="p-8">
               <div className="text-center space-y-8">
                 <div>
@@ -433,7 +492,7 @@ export default function Home() {
 
         {/* Final CTA Section */}
         <section className="my-16">
-          <Card className="border-2 border-primary bg-gradient-to-br from-primary/10 via-accent/5 to-background">
+          <Card className="border-2 border-primary bg-gradient-to-br from-primary/10 via-accent/5 to-background shadow-2xl dark:shadow-primary/20">
             <CardContent className="p-12 text-center space-y-6">
               <div className="flex justify-center">
                 <CheckCircle2 className="h-16 w-16 text-primary" />
@@ -448,13 +507,21 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-                <Button size="lg" asChild className="text-lg px-8">
-                  <Link to="/signup">
+                <Button 
+                  size="lg" 
+                  asChild
+                  variant="ghost"
+                  className="text-lg px-8 shadow-lg hover:shadow-xl transition-all duration-300 group text-white border-none"
+                >
+                  <Link 
+                    to="/signup" 
+                    className="flex items-center text-white rounded-md btn-gradient-link"
+                  >
                     Create Free Account
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild className="text-lg px-8">
+                <Button size="lg" variant="outline" asChild className="text-lg px-8 border-2 hover:border-primary hover:text-primary transition-all duration-300">
                   <Link to="/ideas">Browse Free Ideas</Link>
                 </Button>
               </div>

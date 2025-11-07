@@ -16,10 +16,10 @@ export function Footer() {
   };
 
   return (
-    <footer className="w-full border-t bg-background">
+    <footer className="w-full border-t bg-background/95 backdrop-blur-sm transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
         {/* Campaign Banner */}
-        <div className="mb-8 rounded-lg bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-950 dark:to-accent-950 p-4 text-center">
+        <div className="mb-8 rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 dark:from-primary/20 dark:via-primary/10 dark:to-accent/20 p-4 text-center shadow-md border border-primary/20">
           <p className="text-sm font-medium text-foreground">
             Part of the{' '}
             <span className="font-bold text-primary-600 dark:text-primary-400">
@@ -34,10 +34,25 @@ export function Footer() {
           {/* Brand Section */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-white font-bold text-lg">
+              <div 
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white font-bold text-lg shadow-md"
+                style={{
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                }}
+              >
                 AI
               </div>
-              <span className="font-bold text-lg">AI Ideas Hub</span>
+              <span 
+                className="font-bold text-lg"
+                style={{
+                  background: 'linear-gradient(to right, #2563eb, #60a5fa)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                AI Ideas Hub
+              </span>
             </div>
             <p className="text-sm text-muted-foreground">
               Discover 87 curated AI project ideas designed for professionals curious about AI.

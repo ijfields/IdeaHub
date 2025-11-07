@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Search, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
+import { Menu, Search, User, LogOut, Settings, LayoutDashboard, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,21 +19,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-
-// TODO: Replace with actual auth context
-const useAuth = () => {
-  // Mock auth state - replace with real auth context
-  return {
-    user: null, // { id: '1', email: 'user@example.com', displayName: 'John Doe' }
-    isAuthenticated: false,
-    logout: () => console.log('Logout'),
-  };
-};
+import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 
 export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { user, isAuthenticated, logout } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,15 +49,30 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm transition-all duration-300">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-white font-bold text-lg">
+          <Link to="/" className="flex items-center space-x-2 group">
+            <div 
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white font-bold text-lg shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              }}
+            >
               AI
             </div>
-            <span className="hidden font-bold text-xl sm:inline-block">AI Ideas Hub</span>
+            <span 
+              className="hidden font-bold text-xl sm:inline-block"
+              style={{
+                background: 'linear-gradient(to right, #2563eb, #60a5fa)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              AI Ideas Hub
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -73,7 +81,7 @@ export function Header() {
               <Link
                 key={link.path}
                 to={link.path}
-                className="transition-colors hover:text-primary-600 text-foreground/80"
+                className="transition-all duration-300 hover:text-primary-600 text-foreground/80 hover:scale-105"
               >
                 {link.name}
               </Link>
@@ -97,6 +105,21 @@ export function Header() {
 
         {/* Right side actions */}
         <div className="flex items-center gap-3">
+          {/* Dark Mode Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="transition-all duration-200"
+            aria-label="Toggle theme"
+          >
+            {resolvedTheme === 'dark' ? (
+              <Sun className="h-5 w-5 transition-transform hover:rotate-90" />
+            ) : (
+              <Moon className="h-5 w-5 transition-transform hover:-rotate-12" />
+            )}
+          </Button>
+
           {/* Mobile Search Toggle */}
           <Button
             variant="ghost"

@@ -1,55 +1,66 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Custom base styles */
 @layer base {
   :root {
+    /* Light mode - Professional blue/slate palette */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222.2 47.4% 11.2%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222.2 47.4% 11.2%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+    /* Primary: Professional blue (from Tailwind blue-500) */
+    --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary: Slate (from Tailwind slate-500) */
+    --secondary: 215 16.3% 46.9%;
+    --secondary-foreground: 210 40% 98%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent: Warm orange for CTAs */
+    --accent: 24.6 95% 53.1%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 217.2 91.2% 59.8%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* Dark mode - Professional blue/slate palette */
+    --background: 222.2 47.4% 11.2%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222.2 47.4% 11.2%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 222.2 47.4% 11.2%;
     --popover-foreground: 210 40% 98%;
+    /* Primary: Brighter blue for dark mode */
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary: Darker slate */
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 24.6 95% 53.1%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 217.2 91.2% 59.8%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
   }
 
   body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-family:
       Inter,
       system-ui,
@@ -62,5 +73,157 @@
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  /* Enhanced card styles with shadows */
+  .card-gradient {
+    background: linear-gradient(to bottom right, hsl(var(--card)), hsl(var(--card) / 0.95));
+  }
+
+  .card-hover {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .card-hover:hover {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    transform: translateY(-4px);
+  }
+
+  /* Professional button gradients - Must override all button styles */
+  /* Gradient button class - use this on Link elements */
+  .btn-gradient-link {
+    background: linear-gradient(to right, #2563eb, #3b82f6) !important;
+    background-image: linear-gradient(to right, #2563eb, #3b82f6) !important;
+    color: white !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease-in-out !important;
+    box-shadow: 0 4px 6px -1px rgb(37 99 235 / 0.2), 0 2px 4px -2px rgb(37 99 235 / 0.2) !important;
+  }
+  
+  .btn-gradient-link:hover {
+    background: linear-gradient(to right, #1d4ed8, #2563eb) !important;
+    background-image: linear-gradient(to right, #1d4ed8, #2563eb) !important;
+    color: white !important;
+    box-shadow: 0 10px 15px -3px rgb(37 99 235 / 0.4), 0 4px 6px -4px rgb(37 99 235 / 0.4) !important;
+    transform: translateY(-1px) !important;
+  }
+  
+  /* Override any conflicting classes */
+  .btn-gradient-link.bg-primary,
+  .btn-gradient-link[class*="bg-primary"],
+  .btn-gradient-link.hover\:bg-primary\/90 {
+    background: linear-gradient(to right, #2563eb, #3b82f6) !important;
+    background-image: linear-gradient(to right, #2563eb, #3b82f6) !important;
+  }
+  
+  /* Ensure links with gradient inline styles display correctly */
+  a[style*="linear-gradient"],
+  a[style*="background"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+  }
+  
+  .btn-gradient,
+  button.btn-gradient,
+  a.btn-gradient,
+  .btn-gradient > *,
+  [class*="btn-gradient"] {
+    background: linear-gradient(to right, #2563eb, #3b82f6) !important;
+    background-image: linear-gradient(to right, #2563eb, #3b82f6) !important;
+    color: white !important;
+    border: none !important;
+    transition: all 0.3s ease-in-out !important;
+    box-shadow: 0 4px 6px -1px rgb(37 99 235 / 0.2), 0 2px 4px -2px rgb(37 99 235 / 0.2) !important;
+  }
+  
+  .btn-gradient:hover,
+  button.btn-gradient:hover,
+  a.btn-gradient:hover,
+  .btn-gradient:hover > *,
+  [class*="btn-gradient"]:hover {
+    background: linear-gradient(to right, #1d4ed8, #2563eb) !important;
+    background-image: linear-gradient(to right, #1d4ed8, #2563eb) !important;
+    color: white !important;
+    box-shadow: 0 10px 15px -3px rgb(37 99 235 / 0.4), 0 4px 6px -4px rgb(37 99 235 / 0.4) !important;
+    transform: translateY(-1px) !important;
+  }
+  
+  .btn-gradient:focus-visible,
+  button.btn-gradient:focus-visible,
+  a.btn-gradient:focus-visible {
+    outline: 2px solid #2563eb !important;
+    outline-offset: 2px !important;
+  }
+  
+  /* Override any bg-primary or other background classes */
+  .btn-gradient.bg-primary,
+  .btn-gradient[class*="bg-primary"] {
+    background: linear-gradient(to right, #2563eb, #3b82f6) !important;
+    background-image: linear-gradient(to right, #2563eb, #3b82f6) !important;
+  }
+
+  /* Text gradients */
+  .text-gradient {
+    background: linear-gradient(to right, #2563eb, #60a5fa);
+    background-image: linear-gradient(to right, #2563eb, #60a5fa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+  }
+  
+  /* Gradient background utility */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background-image: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    background-color: hsl(var(--background) / 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+}
+
+/* Custom utilities */
+@layer utilities {
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
   }
 }
