@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { query, param, validationResult } from 'express-validator';
-import supabase from '../config/supabase.js';
+import { supabaseAdmin } from '../config/supabase.js';
 import { optionalAuth } from '../middleware/auth.js';
 import { asyncHandler, notFound, forbidden, badRequest } from '../utils/errors.js';
 
@@ -79,7 +79,7 @@ router.get(
     const offset = (page - 1) * limit;
 
     // Build query
-    let query = supabase.from('ideas').select('*', { count: 'exact' });
+    let query = supabaseAdmin!.from('ideas').select('*', { count: 'exact' });
 
     // Apply tier-based access control
     // Guests can only see free_tier ideas, authenticated users see all
@@ -212,7 +212,7 @@ router.get(
     const offset = (page - 1) * limit;
 
     // Build search query
-    let query = supabase.from('ideas').select('*', { count: 'exact' });
+    let query = supabaseAdmin!.from('ideas').select('*', { count: 'exact' });
 
     // Apply tier-based access control
     if (!isAuthenticated) {
@@ -277,7 +277,7 @@ router.get(
     const offset = (page - 1) * limit;
 
     // Build query
-    let query = supabase.from('ideas').select('*', { count: 'exact' }).eq('category', category);
+    let query = supabaseAdmin!.from('ideas').select('*', { count: 'exact' }).eq('category', category);
 
     // Apply tier-based access control
     if (!isAuthenticated) {
