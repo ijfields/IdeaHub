@@ -312,7 +312,33 @@
 
 ---
 
-## Milestone 8: Data Population (Week 5)
+## Milestone 8: Educational Content Integration (Week 5)
+
+**Reference:** See `/docs/EDUCATIONAL_CONTENT_INTEGRATION_PLAN.md` for comprehensive plan
+
+### Pre-Campaign Sprint (Nov 8-18) - Priority P0
+- [ ] Extend ideas table with educational fields (prerequisites, learning_objectives, getting_started_guide, best_use_cases, common_pitfalls)
+- [ ] Add 5 high-quality beginner ideas from ClaudecCodeWeb.md
+- [ ] Create simple difficulty definitions pages (/learn/difficulty/beginner|intermediate|advanced)
+- [ ] Add "Getting Started" tab to idea detail pages
+- [ ] Populate 20 most popular ideas with rich educational content
+- [ ] Create simple tool comparison table at /tools/compare
+- [ ] Add common pitfalls section to 10-15 key ideas
+- [ ] Write 3 comprehensive difficulty guides
+
+### Post-Campaign Foundation (Nov 19+) - Priority P2
+- [ ] Create new tables: tools, difficulty_definitions, learning_paths, educational_resources
+- [ ] Populate tools registry (Claude Code, Bolt, Lovable, Cursor, etc.)
+- [ ] Add all 60 ClaudecCodeWeb.md ideas (147 total)
+- [ ] Populate tool_recommendations for all ideas
+- [ ] Build /learn hub landing page
+- [ ] Create tool comparison wizard
+- [ ] Implement scenario-based project matching
+- [ ] Build learning paths system
+
+---
+
+## Milestone 9: Data Population (Week 5)
 
 ### Idea Content Creation
 - [ ] Create SQL migration script for 87 ideas
@@ -340,7 +366,7 @@
 
 ---
 
-## Milestone 9: Testing & Quality Assurance (Week 6)
+## Milestone 10: Testing & Quality Assurance (Week 6)
 
 ### Unit Testing
 - [ ] Write unit tests for API endpoints (backend)
@@ -381,7 +407,7 @@
 
 ---
 
-## Milestone 10: Deployment & Launch (Week 6)
+## Milestone 11: Deployment & Launch (Week 6)
 
 ### Deployment Setup
 - [ ] Create production Supabase project
@@ -421,7 +447,7 @@
 
 ---
 
-## Milestone 11: Post-Launch & Iteration (Ongoing)
+## Milestone 12: Post-Launch & Iteration (Ongoing)
 
 ### Monitoring & Maintenance
 - [ ] Daily monitoring of error rates
