@@ -13,7 +13,7 @@ interface NewsBannerProps {
 export function NewsBanner({
   id = 'anthropic-campaign-2025',
   title = 'Limited Time Campaign',
-  message = 'Build AI projects with free Anthropic Claude Code credits! Campaign ends November 18, 2025.',
+  message = 'Build AI projects with free Anthropic Claude Code Web credits! Campaign ends November 18, 2025.',
   link = '/ideas',
   linkText = 'Explore Ideas',
 }: NewsBannerProps) {

@@ -448,6 +448,7 @@ After completing this setup:
 - [Row Level Security Guide](https://supabase.com/docs/guides/auth/row-level-security)
 - [Supabase CLI Reference](https://supabase.com/docs/reference/cli)
 - [Database Functions Guide](https://supabase.com/docs/guides/database/functions)
+- [Supabase MCP Server Setup](./MCP_SUPABASE_SETUP.md) - Configure Cursor's MCP server to connect to your Supabase database
 
 ---
 

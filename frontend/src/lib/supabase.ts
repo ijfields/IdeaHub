@@ -59,6 +59,50 @@ export const supabase = createClient<Database>(
       persistSession: true,
       // Detect session from URL (useful for email confirmation links)
       detectSessionInUrl: true,
+      // Add flow type to prevent hanging
+      flowType: 'pkce',
+    },
+    global: {
+      // Add fetch options to help with timeout issues
+      fetch: (url, options = {}) => {
+        console.log('🔵 SUPABASE: Making request to:', url);
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.error('🔴 SUPABASE: Request timeout after 10 seconds');
+          controller.abort();
+        }, 10000);
+        
+        // Merge abort signal with existing signal if present
+        const signal = options.signal 
+          ? (() => {
+              const mergedController = new AbortController();
+              options.signal.addEventListener('abort', () => mergedController.abort());
+              controller.signal.addEventListener('abort', () => mergedController.abort());
+              return mergedController.signal;
+            })()
+          : controller.signal;
+        
+        return fetch(url, {
+          ...options,
+          signal,
+        })
+        .then((response) => {
+          clearTimeout(timeoutId);
+          console.log('🟢 SUPABASE: Request completed:', response.status);
+          return response;
+        })
+        .catch((error) => {
+          clearTimeout(timeoutId);
+          if (error.name === 'AbortError') {
+            console.error('🔴 SUPABASE: Request aborted (timeout)');
+          } else {
+            console.error('🔴 SUPABASE: Fetch error:', error);
+          }
+          throw error;
+        });
+      },
     },
   }
 );

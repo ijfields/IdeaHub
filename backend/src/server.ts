@@ -11,12 +11,20 @@ dotenv.config();
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
-app.use(morgan('dev')); // HTTP request logging
+// Enhanced morgan logging to see all requests
+app.use(morgan('dev', {
+  skip: (req) => req.url === '/health', // Skip health check spam
+}));
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`\n📥 BACKEND: ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  next();
+});
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
@@ -57,9 +65,10 @@ app.use((err: ApiError | Error, _req: Request, res: Response, _next: NextFunctio
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`
+// Start server (only in non-Vercel environments)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`
 ╔════════════════════════════════════════════╗
 ║   IdeaHub Backend API Server              ║
 ╚════════════════════════════════════════════╝
@@ -69,18 +78,20 @@ app.listen(PORT, () => {
 🔗 Health check: http://localhost:${PORT}/health
 ⏰ Started at: ${new Date().toLocaleString()}
 
-  `);
-});
+    `);
+  });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', error => {
-  console.error('Uncaught Exception:', error);
-  process.exit(1);
-});
+  // Handle uncaught exceptions
+  process.on('uncaughtException', error => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
+  });
+}
 
+// Export for Vercel serverless functions
 export default app;

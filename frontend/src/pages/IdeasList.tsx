@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
   X,
@@ -85,11 +85,15 @@ const IDEAS_PER_PAGE = 12;
 export default function IdeasList() {
   const { user } = useAuth();
   const isAuthenticated = !!user;
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter state
+  // Filter state - initialize from URL params
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    const category = searchParams.get('category');
+    return category ? [category] : [];
+  });
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [selectedBuildTime, setSelectedBuildTime] = useState<string>('all');
@@ -148,6 +152,15 @@ export default function IdeasList() {
     enabled: true,
   });
   const ideas = data?.data || [];
+
+  // Debug logging for authenticated users
+  useEffect(() => {
+    if (data && isAuthenticated) {
+      console.log('🟢 IDEAS LIST: Authenticated user - Ideas received:', ideas.length);
+      console.log('🟢 IDEAS LIST: API filters:', apiFilters);
+      console.log('🟢 IDEAS LIST: Total from API:', data.pagination?.total || 'unknown');
+    }
+  }, [data, ideas.length, isAuthenticated, apiFilters]);
 
   // Client-side filtering and sorting
   const filteredAndSortedIdeas = useMemo(() => {

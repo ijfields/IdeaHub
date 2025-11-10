@@ -14,6 +14,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft,
+  ArrowRight,
   Eye,
   MessageSquare,
   FolderKanban,
@@ -101,7 +102,9 @@ export default function IdeaDetail() {
   const { toast } = useToast();
 
   // Data fetching
-  const { data: ideaResponse, isLoading: ideaLoading } = useIdea(id || '');
+  const { data: ideaResponse, isLoading: ideaLoading, error: ideaError } = useIdea(id || '', {
+    retry: false,
+  });
   const { data: commentsResponse, isLoading: commentsLoading } = useComments(id || '');
   const { data: projectsResponse, isLoading: projectsLoading } = useProjects(id || '');
 
@@ -131,11 +134,42 @@ export default function IdeaDetail() {
   const comments = commentsResponse?.data || [];
   const projects = projectsResponse?.data || [];
 
-  // Track page view on mount
+  // Clear edit state if the comment being edited no longer exists
+  // This prevents stale edit state from persisting after refetches
+  useEffect(() => {
+    if (editingComment && comments.length > 0) {
+      const findComment = (comment: Comment): boolean => {
+        if (comment.id === editingComment) {
+          return true;
+        }
+        // Check nested replies
+        if (comment.replies && comment.replies.length > 0) {
+          return comment.replies.some(findComment);
+        }
+        return false;
+      };
+
+      const commentExists = comments.some(findComment);
+
+      // Only clear if comment doesn't exist (was deleted)
+      // Don't clear on content changes - that's handled by handleCommentUpdate
+      if (!commentExists) {
+        setEditingComment(null);
+        setEditContent('');
+      }
+    }
+  }, [comments, editingComment]);
+
+  // Track page view on mount (non-blocking, fire and forget)
   useEffect(() => {
     if (id) {
-      trackPageView(`/ideas/${id}`, id).catch(console.error);
-      incrementView(id).catch(console.error);
+      // Don't await these - let them run in background
+      trackPageView(`/ideas/${id}`, id).catch(() => {
+        // Silently fail - analytics shouldn't block page rendering
+      });
+      incrementView(id).catch(() => {
+        // Silently fail - view count shouldn't block page rendering
+      });
     }
   }, [id]);
 
@@ -169,10 +203,14 @@ export default function IdeaDetail() {
         title: 'Comment posted',
         description: 'Your comment has been added.',
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('🔴 COMMENT SUBMIT ERROR:', error);
+      console.error('   Error message:', error?.message);
+      console.error('   Error response:', error?.response?.data);
+      console.error('   Error status:', error?.response?.status);
       toast({
         title: 'Error',
-        description: 'Failed to post comment. Please try again.',
+        description: error?.response?.data?.message || error?.message || 'Failed to post comment. Please try again.',
         variant: 'destructive',
       });
     }
@@ -543,8 +581,8 @@ export default function IdeaDetail() {
     );
   };
 
-  // Loading state
-  if (ideaLoading) {
+  // Loading state - only show skeleton if we don't have data yet
+  if (ideaLoading && !idea) {
     return (
       <MainLayout>
         <div className="max-w-7xl mx-auto space-y-6">
@@ -556,7 +594,37 @@ export default function IdeaDetail() {
     );
   }
 
-  // Not found
+  // Error state
+  if (ideaError || (!ideaLoading && !idea)) {
+    return (
+      <MainLayout>
+        <div className="max-w-7xl mx-auto text-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Idea not found</h1>
+          <p className="text-muted-foreground mb-6">
+            {ideaError 
+              ? 'There was an error loading this idea. Please try again later.'
+              : "The idea you're looking for doesn't exist or has been removed."}
+          </p>
+          {ideaError && (
+            <p className="text-sm text-destructive mb-4">
+              {ideaError instanceof Error ? ideaError.message : 'Unknown error'}
+            </p>
+          )}
+          <div className="flex gap-4 justify-center">
+            <Button onClick={() => navigate('/ideas')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Ideas
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Not found (shouldn't reach here, but safety check)
   if (!idea) {
     return (
       <MainLayout>
@@ -575,7 +643,10 @@ export default function IdeaDetail() {
   }
 
   const isFreeTier = idea.free_tier;
-  const canViewFullContent = user || isFreeTier;
+  const isBuyButton = idea.title.toLowerCase().includes('buybutton') || idea.title.toLowerCase().includes('buy button');
+  // BuyButton is special: visible to guests but with limited content
+  const canViewFullContent = user || (isFreeTier && !isBuyButton);
+  const canViewBuyButtonSneakPeek = !user && isBuyButton;
 
   return (
     <MainLayout>
@@ -653,54 +724,109 @@ export default function IdeaDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Description Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-foreground leading-relaxed">{idea.description}</p>
-              </CardContent>
-            </Card>
+            {/* BuyButton Special: Show sneak peek for guests */}
+            {canViewBuyButtonSneakPeek ? (
+              <>
+                {/* Problem Statement - Visible to guests */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>The Problem</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Digital creators struggle to monetize services without technical complexity or high fees. Existing tools like Gumroad and Stripe charge 5-10% fees, and many creators want to own the full stack and understand payment processing.
+                    </p>
+                  </CardContent>
+                </Card>
 
-            {/* Problem Statement */}
-            <Card>
-              <CardHeader>
-                <CardTitle>The Problem</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  {idea.description}
-                </p>
-              </CardContent>
-            </Card>
+                {/* Solution Overview - Visible to guests */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>The Solution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground leading-relaxed">
+                      A no-code widget enabling creators to embed a payment button on any website with instant payouts. This solution leverages {idea.tools.join(', ')} to build a lightweight, embeddable "Buy Now" button that handles the entire transaction flow.
+                    </p>
+                  </CardContent>
+                </Card>
 
-            {/* Solution Overview */}
-            <Card>
-              <CardHeader>
-                <CardTitle>The Solution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  This AI-powered solution leverages {idea.tools.join(', ')} to address the
-                  core challenges and deliver a seamless user experience.
-                </p>
-              </CardContent>
-            </Card>
+                {/* Why It Matters - Visible to guests */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Why It Matters</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Creators need simple monetization solutions. While tools like Gumroad, Stripe Button, and Lemonsqueezy exist, building your own teaches valuable AI & full-stack skills while giving you complete control over your payment processing.
+                    </p>
+                  </CardContent>
+                </Card>
 
-            {/* Why It Matters */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Why It Matters</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  This project is valuable because it demonstrates practical AI applications
-                  in the {idea.category.toLowerCase()} space, making it accessible to
-                  professionals looking to explore AI capabilities.
-                </p>
-              </CardContent>
-            </Card>
+                {/* Sign Up CTA for BuyButton */}
+                <Card className="border-primary/50 bg-primary/5">
+                  <CardContent className="pt-6">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-xl font-semibold">Want the Full Implementation Guide?</h3>
+                      <p className="text-muted-foreground">
+                        Sign up to access detailed step-by-step instructions, code architecture, monetization strategy, and estimated build time.
+                      </p>
+                      <Button onClick={() => navigate('/signup')} className="btn-gradient-link">
+                        Sign Up to See Full Guide
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                {/* Problem Statement - Render immediately when idea data is available */}
+                {idea && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>The Problem</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        {idea.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Solution Overview */}
+                {idea && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>The Solution</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground leading-relaxed">
+                        This AI-powered solution leverages {idea.tools.join(', ')} to address the
+                        core challenges and deliver a seamless user experience.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Why It Matters */}
+                {idea && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Why It Matters</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground leading-relaxed">
+                        This project is valuable because it demonstrates practical AI applications
+                        in the {idea.category.toLowerCase()} space, making it accessible to
+                        professionals looking to explore AI capabilities.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
 
             {/* Implementation Guide - Protected */}
             <Card>
@@ -1112,10 +1238,7 @@ export default function IdeaDetail() {
                   onChange={(e) => setCommentContent(e.target.value)}
                   className="min-h-[100px] mb-2"
                 />
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-muted-foreground">
-                    Markdown is supported
-                  </p>
+                <div className="flex justify-end items-center">
                   <Button type="submit" disabled={createCommentMutation.isPending}>
                     <Send className="h-4 w-4 mr-2" />
                     {createCommentMutation.isPending ? 'Posting...' : 'Post Comment'}

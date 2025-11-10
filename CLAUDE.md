@@ -306,7 +306,7 @@ Refer to this document for:
 
 ---
 
-### Session 2: Styling Fixes & React 18 Downgrade (December 2024)
+### Session 2: Styling Fixes & React 18 Downgrade (November 2025)
 
 **Branch:** `downgrade-react-18`  
 **Focus:** Fix Tailwind CSS v4 configuration, resolve React Query errors, restore professional styling
@@ -353,6 +353,67 @@ Refer to this document for:
 
 ---
 
+### Session 3: Authentication & Account Issues Fixes (November 2025)
+
+**Branch:** `downgrade-react-18`  
+**Focus:** Fix authentication hanging, logout issues, blank cards, comment submission, and markdown rendering
+
+**Problems Solved:**
+
+1. **Login Hanging After Successful Authentication**
+   - Added 5-second timeout to `fetchProfile` function
+   - Ensured `setLoading(false)` always completes, even if profile fetch fails/hangs
+   - Added proper error handling with `.catch()` and `.finally()` blocks
+
+2. **Logout Not Working**
+   - Clear local state FIRST before attempting Supabase signOut
+   - Added 3-second timeout to signOut operation
+   - Ensured UI updates immediately even if Supabase call hangs
+
+3. **Blank Cards on Profile/Settings/Dashboard Pages**
+   - Profile page: Allow rendering even if `profile` is null, use `user.email` as fallback
+   - Settings/Dashboard: Check `authLoading` state and show appropriate loading/error states
+   - Added fallback values for all profile-dependent fields
+
+4. **Comments Showing "Anonymous"**
+   - Updated backend GET comments route to return `user: { display_name, email }` structure
+   - Added fallback fetch for user data if join doesn't return it
+   - Fixed optimistic update in `useCreateComment` to use actual user data
+
+5. **Comment Update Failing**
+   - Added `PUT /api/comments/:id` route matching frontend expectations
+   - Added same user data fetching logic as create route
+   - Added extensive logging for debugging
+
+6. **Markdown Not Rendering**
+   - Removed "Markdown is supported" text (users won't know markdown)
+   - Plan to add rich text editor in future instead of markdown
+
+7. **Comments Appearing in Edit Mode Automatically**
+   - Added `useEffect` to clear edit state if comment being edited no longer exists
+   - Improved edit state management to prevent stale state
+
+**Key Changes:**
+- Backend: Updated comment routes to return consistent user data structure, added PUT route
+- Frontend: Added timeouts to all async auth operations, improved error handling, added fallback rendering
+- Files Modified: 20+ files across backend and frontend
+
+**Key Learnings:**
+- Always add timeouts to async operations to prevent UI hanging
+- Clear local state before server calls (especially logout)
+- Use fallback values so pages render even if optional data fails to load
+- Match API data structures between backend and frontend
+- Handle loading states properly before rendering protected content
+- Use `supabaseAdmin` for backend operations to bypass RLS
+
+**Documentation Created:**
+- `docs/SESSION_SUMMARY_AUTH_FIXES.md` - Detailed session summary
+- `docs/AUTH_ACCOUNT_RULES.md` - Rules and patterns to prevent auth/account issues
+
+**Status:** ✅ All critical auth/account issues resolved, ready for testing
+
+---
+
 ## Tips for Future Sessions
 
 ### Using Subagent Orchestration
@@ -380,4 +441,13 @@ When working on complex tasks:
 - Consolidated file at `/supabase/all-migrations.sql`
 - Run via Supabase Dashboard SQL Editor
 - Test queries to verify after migration
+
+### Authentication & Account Management
+- **Always read `docs/AUTH_ACCOUNT_RULES.md` before working on auth/account features**
+- Never block UI on async operations - always add timeouts
+- Clear local state before server calls (especially logout)
+- Use fallback values so pages render even if optional data fails
+- Match API data structures between backend and frontend
+- Handle loading states properly before rendering protected content
+- Use `supabaseAdmin` for backend operations to bypass RLS
 

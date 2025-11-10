@@ -25,7 +25,8 @@ import { useAuth } from '@/context/AuthContext';
 export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  const isAuthenticated = !!user;
   const { resolvedTheme, toggleTheme } = useTheme();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -135,11 +136,11 @@ export function Header() {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.avatar} alt={user?.displayName || 'User'} />
+                    <AvatarImage src={profile?.avatar || undefined} alt={profile?.display_name || 'User'} />
                     <AvatarFallback>
-                      {user?.displayName ? getUserInitials(user.displayName) : <User className="h-5 w-5" />}
+                      {profile?.display_name ? getUserInitials(profile.display_name) : <User className="h-5 w-5" />}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -147,7 +148,7 @@ export function Header() {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.displayName || 'User'}</p>
+                    <p className="text-sm font-medium leading-none">{profile?.display_name || user?.email || 'User'}</p>
                     <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                   </div>
                 </DropdownMenuLabel>
@@ -171,10 +172,24 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="flex items-center text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          await signOut();
+                          window.location.href = '/';
+                        } catch (error) {
+                          console.error('Logout error:', error);
+                          // Force redirect even if signOut fails
+                          window.location.href = '/';
+                        }
+                      }} 
+                      className="flex items-center text-destructive cursor-pointer"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
@@ -231,13 +246,13 @@ export function Header() {
                   <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
                     <div className="flex items-center gap-3 px-3 py-2">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={user?.avatar} alt={user?.displayName || 'User'} />
+                        <AvatarImage src={profile?.avatar || undefined} alt={profile?.display_name || 'User'} />
                         <AvatarFallback>
-                          {user?.displayName ? getUserInitials(user.displayName) : <User className="h-5 w-5" />}
+                          {profile?.display_name ? getUserInitials(profile.display_name) : <User className="h-5 w-5" />}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">{user?.displayName || 'User'}</span>
+                        <span className="text-sm font-medium">{profile?.display_name || user?.email || 'User'}</span>
                         <span className="text-xs text-muted-foreground">{user?.email}</span>
                       </div>
                     </div>
@@ -253,14 +268,24 @@ export function Header() {
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </Link>
-                    <Button
-                      variant="ghost"
-                      onClick={logout}
-                      className="justify-start text-destructive hover:text-destructive"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            try {
+                              await signOut();
+                              window.location.href = '/';
+                            } catch (error) {
+                              console.error('Logout error:', error);
+                              // Force redirect even if signOut fails
+                              window.location.href = '/';
+                            }
+                          }}
+                          className="justify-start text-destructive hover:text-destructive w-full"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Log out
+                        </Button>
                   </div>
                 )}
               </div>

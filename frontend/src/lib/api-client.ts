@@ -51,12 +51,13 @@ class ApiClient {
 
   constructor() {
     // Get API URL from environment
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    const apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    // Backend serves routes at /api, not /api/v1
+    const apiVersion = import.meta.env.VITE_API_VERSION || '';
 
     // Create axios instance with base configuration
     this.client = axios.create({
-      baseURL: `${apiUrl}/api/${apiVersion}`,
+      baseURL: `${apiUrl}/api${apiVersion ? `/${apiVersion}` : ''}`,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -66,60 +67,142 @@ class ApiClient {
     // Request interceptor: Add authentication token
     this.client.interceptors.request.use(
       async (config) => {
+        console.log('🔵 FRONTEND: Request interceptor - Starting');
+        
+        // Check if Supabase is properly configured (not using placeholder)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const hasValidSupabase = supabaseUrl && 
+                                 supabaseUrl !== 'https://placeholder.supabase.co' &&
+                                 supabase && 
+                                 typeof supabase.auth?.getSession === 'function';
+        
+        if (!hasValidSupabase) {
+          console.log('🔵 FRONTEND: Supabase not configured, skipping auth check');
+          console.log('🔵 FRONTEND: Sending request to:', config.url);
+          return config;
+        }
+        
+        console.log('🔵 FRONTEND: Getting session...');
+        
         try {
-          // Only try to get session if Supabase is properly configured
-          if (supabase && typeof supabase.auth?.getSession === 'function') {
-            const {
-              data: { session },
-            } = await supabase.auth.getSession();
-
-            // Add auth token to request if available
-            if (session?.access_token) {
-              config.headers.Authorization = `Bearer ${session.access_token}`;
+          // Try to get session from Supabase storage directly (synchronous)
+          // Supabase stores session in localStorage with a key pattern
+          let accessToken: string | null = null;
+          
+          if (typeof window !== 'undefined' && supabase) {
+            // Search all localStorage keys for Supabase session
+            // Supabase stores session with keys like 'sb-{project}-auth-token' or similar
+            try {
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth'))) {
+                  try {
+                    const stored = localStorage.getItem(key);
+                    if (stored) {
+                      const parsed = JSON.parse(stored);
+                      // Try various nested paths where the token might be stored
+                      accessToken = parsed?.access_token 
+                        || parsed?.currentSession?.access_token 
+                        || parsed?.session?.access_token
+                        || (parsed?.expires_at ? parsed?.access_token : null); // If it has expires_at, it might be the session object
+                      
+                      if (accessToken) {
+                        console.log('🔵 FRONTEND: Found token in localStorage key:', key);
+                        break;
+                      }
+                    }
+                  } catch (e) {
+                    // Try next key
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('🔴 FRONTEND: Error searching localStorage:', e);
+            }
+            
+            // If not found in localStorage, try getSession() with a short timeout
+            if (!accessToken) {
+              const sessionPromise = supabase.auth.getSession();
+              const timeoutPromise = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Session timeout after 500ms')), 500)
+              );
+              
+              try {
+                const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+                accessToken = result?.data?.session?.access_token || null;
+                if (accessToken) {
+                  console.log('🔵 FRONTEND: Got token from getSession()');
+                }
+              } catch (timeoutError: any) {
+                // Timeout is expected - just proceed without token
+                console.log('🔵 FRONTEND: Session check timed out, proceeding without auth');
+              }
             }
           }
-        } catch (error) {
-          // Silently fail - don't block requests if auth fails
-          console.warn('Error getting session for API request:', error);
+          
+          // Add token to request if we found one
+          if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+            console.log('🔵 FRONTEND: Auth token added');
+          } else {
+            console.log('🔵 FRONTEND: No auth token (guest user)');
+          }
+        } catch (error: any) {
+          console.warn('🔴 FRONTEND: Exception getting session:', error.message || error);
+          // Continue without auth token - might be a guest user or session expired
         }
 
+        console.log('🔵 FRONTEND: Sending request to:', config.url);
         return config;
       },
       (error) => {
+        console.error('🔴 FRONTEND: Request interceptor error:', error);
         return Promise.reject(error);
       }
     );
 
     // Response interceptor: Handle common errors
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log('🟢 FRONTEND: Response interceptor - Response received:', response.status, response.config.url);
+        return response;
+      },
       (error: AxiosError) => {
+        console.error('\n🔴 FRONTEND: Response interceptor - ERROR');
+        console.error('   Has response:', !!error.response);
+        console.error('   Has request:', !!error.request);
+        console.error('   Message:', error.message);
+        
         // Handle common HTTP errors
         if (error.response) {
           const status = error.response.status;
+          console.error('   Status:', status);
+          console.error('   Response data:', error.response.data);
 
           switch (status) {
             case 401:
-              console.error('Unauthorized: Please log in');
+              console.error('   Unauthorized: Please log in');
               // Optionally redirect to login or refresh token
               break;
             case 403:
-              console.error('Forbidden: You do not have permission');
+              console.error('   Forbidden: You do not have permission');
               break;
             case 404:
-              console.error('Not found: Resource does not exist');
+              console.error('   Not found: Resource does not exist');
               break;
             case 500:
-              console.error('Server error: Please try again later');
+              console.error('   Server error: Please try again later');
               break;
             default:
-              console.error(`API error (${status}):`, error.message);
+              console.error(`   API error (${status}):`, error.message);
           }
         } else if (error.request) {
-          console.error('Network error: Unable to reach server');
+          console.error('   Network error: Unable to reach server');
+          console.error('   Request config:', error.config?.url);
         } else {
-          console.error('Request error:', error.message);
+          console.error('   Request error:', error.message);
         }
+        console.error('═══════════════════════════════════════════════════════════\n');
 
         return Promise.reject(error);
       }
@@ -142,10 +225,38 @@ class ApiClient {
       });
       throw new Error('API client not initialized');
     }
-    const response = await this.client.get<ApiResponse<Idea[]>>('/ideas', {
-      params,
-    });
-    return response.data;
+    
+    // Debug logging - MORE VISIBLE
+    console.log('\n═══════════════════════════════════════════════════════════');
+    console.log('🟡 FRONTEND: API Client - Fetching ideas');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('Params:', params);
+    console.log('Base URL:', this.client.defaults.baseURL);
+    console.log('Full URL:', `${this.client.defaults.baseURL}/ideas`);
+    console.log('═══════════════════════════════════════════════════════════\n');
+    
+    try {
+      const response = await this.client.get<ApiResponse<Idea[]>>('/ideas', {
+        params,
+      });
+      console.log('\n🟢 FRONTEND: API Client - Response received');
+      console.log('   Status:', response.status);
+      console.log('   Data length:', response.data?.data?.length || 0);
+      console.log('   Success:', response.data?.success);
+      console.log('   Has data:', !!response.data?.data);
+      console.log('   First idea:', response.data?.data?.[0]?.title || 'None');
+      console.log('═══════════════════════════════════════════════════════════\n');
+      return response.data;
+    } catch (error: any) {
+      console.error('\n🔴 FRONTEND: API Client - ERROR fetching ideas');
+      console.error('   Message:', error.message);
+      console.error('   Status:', error.response?.status);
+      console.error('   Response data:', error.response?.data);
+      console.error('   URL:', error.config?.url);
+      console.error('   Base URL:', error.config?.baseURL);
+      console.error('═══════════════════════════════════════════════════════════\n');
+      throw error;
+    }
   }
 
   /**
