@@ -414,6 +414,65 @@ Refer to this document for:
 
 ---
 
+### Session 4: Backend API Routes & Profile Page Fixes (November 12, 2025)
+
+**Branch:** `downgrade-react-18`  
+**Focus:** Fix backend API route errors, logout auto-login issue, empty profile pages, and UI standardization
+
+**Problems Solved:**
+
+1. **Backend API Route Errors**
+   - Fixed GET `/api/ideas/:ideaId/projects` 404 error (moved route to ideas router, placed before `/:id`)
+   - Fixed POST `/api/projects` 500 error (changed to use `supabaseAdmin` for RLS bypass)
+   - Added POST `/api/ideas/:id/view` route for view count increment
+   - Added `/analytics` alias to `/metrics` router for frontend compatibility
+   - Added `/pageview` route alias in addition to `/page-view`
+
+2. **Logout Auto-Login Issue**
+   - Fixed users being automatically logged back in after logout
+   - Root cause: State cleared before Supabase signOut, session remained in localStorage
+   - Solution: Sign out from Supabase FIRST, then clear state and manually clear localStorage
+
+3. **Empty Profile Pages**
+   - Fixed Profile, Dashboard, and Settings pages showing empty cards
+   - Added proper user existence checks before rendering
+   - Improved fallback values (displayName defaults to 'User' if email missing)
+   - Better error handling for missing profile data
+   - Pages now render content even when profile is null
+
+4. **UI/UX Standardization**
+   - Standardized button styling with `btn-gradient` class on Sign In, Create Account, Submit Project buttons
+   - Fixed dialog overlay transparency (solid background for forms)
+   - Improved form spacing in project submission dialog
+
+5. **Project URL Validation**
+   - Added validation to prevent localhost project URLs from opening
+   - Shows error message for invalid localhost URLs instead of broken links
+
+6. **API Client Fixes**
+   - Fixed `createProject` endpoint to use correct `/projects` route with `idea_id` in body
+   - Updated backend default port to 3000 (was 3001)
+
+**Key Changes:**
+- Backend: Updated all projects router queries to use `supabaseAdmin`, fixed route mounting
+- Frontend: Improved auth context signOut logic, added localStorage clearing, improved profile page rendering
+- Files Modified: 15+ files across backend and frontend
+
+**Documentation Created:**
+- `docs/BUGFIXES.md` - Comprehensive bug fixes tracking log
+- Updated `docs/testing on downgrade-react-18.md` with fixed issues
+
+**Key Learnings:**
+- Always use `supabaseAdmin` for backend operations to bypass RLS
+- Sign out from Supabase before clearing local state to prevent session restoration
+- Manually clear localStorage session keys to prevent auto-login
+- Place more specific routes before less specific ones in Express (e.g., `/:ideaId/projects` before `/:id`)
+- Ensure pages render content even when optional data (like profile) is missing
+
+**Status:** ✅ All API routes working, logout fixed, profile pages rendering correctly
+
+---
+
 ## Tips for Future Sessions
 
 ### Using Subagent Orchestration
