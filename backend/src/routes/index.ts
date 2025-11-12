@@ -47,9 +47,10 @@ import ideasRouter from './ideas.js';
 router.use('/users', usersRouter);
 router.use('/projects', projectsRouter);
 router.use('/', commentsRouter); // Mounts /comments and /ideas/:ideaId/comments routes
-router.use('/ideas', ideasRouter); // Main ideas routes
-router.use('/ideas', projectsRouter); // For /api/ideas/:ideaId/projects route
+router.use('/ideas', ideasRouter); // Main ideas routes (includes /ideas/:ideaId/projects GET route and /ideas/:id/view POST route)
 router.use('/metrics', metricsRouter);
+// Alias /analytics to /metrics for frontend compatibility
+router.use('/analytics', metricsRouter);
 
 // Future route mounting will go here
 // router.use('/auth', authRouter);

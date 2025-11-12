@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
   X,
@@ -35,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
 import { useIdeas } from '@/hooks/useIdeas';
@@ -85,14 +85,18 @@ const IDEAS_PER_PAGE = 12;
 export default function IdeasList() {
   const { user } = useAuth();
   const isAuthenticated = !!user;
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter state
+  // Filter state - initialize from URL params
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    const category = searchParams.get('category');
+    return category ? [category] : [];
+  });
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
-  const [selectedBuildTime, setSelectedBuildTime] = useState<string>('');
+  const [selectedBuildTime, setSelectedBuildTime] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('popular');
   const [currentPage, setCurrentPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -141,9 +145,22 @@ export default function IdeasList() {
     isAuthenticated,
   ]);
 
-  // Fetch ideas
-  const { data, isLoading, error } = useIdeas(apiFilters);
+  // Fetch ideas - disabled if QueryClient might not be ready
+  const { data, isLoading, error } = useIdeas(apiFilters, {
+    retry: 0, // Disable retries to prevent cascading errors
+    retryDelay: 0,
+    enabled: true,
+  });
   const ideas = data?.data || [];
+
+  // Debug logging for authenticated users
+  useEffect(() => {
+    if (data && isAuthenticated) {
+      console.log('🟢 IDEAS LIST: Authenticated user - Ideas received:', ideas.length);
+      console.log('🟢 IDEAS LIST: API filters:', apiFilters);
+      console.log('🟢 IDEAS LIST: Total from API:', data.pagination?.total || 'unknown');
+    }
+  }, [data, ideas.length, isAuthenticated, apiFilters]);
 
   // Client-side filtering and sorting
   const filteredAndSortedIdeas = useMemo(() => {
@@ -164,7 +181,7 @@ export default function IdeasList() {
     }
 
     // Filter by build time (client-side)
-    if (selectedBuildTime) {
+    if (selectedBuildTime && selectedBuildTime !== 'all') {
       result = result.filter((idea) => {
         const buildTime = idea.estimated_build_time?.toLowerCase() || '';
         switch (selectedBuildTime) {
@@ -222,7 +239,7 @@ export default function IdeasList() {
     setSelectedCategories([]);
     setSelectedDifficulties([]);
     setSelectedTools([]);
-    setSelectedBuildTime('');
+    setSelectedBuildTime('all');
     setCurrentPage(1);
   };
 
@@ -231,7 +248,7 @@ export default function IdeasList() {
     selectedCategories.length > 0 ||
     selectedDifficulties.length > 0 ||
     selectedTools.length > 0 ||
-    selectedBuildTime;
+    (selectedBuildTime && selectedBuildTime !== 'all');
 
   // Toggle filter selection
   const toggleFilter = (
@@ -351,7 +368,7 @@ export default function IdeasList() {
             <SelectValue placeholder="Any build time" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Any build time</SelectItem>
+            <SelectItem value="all">Any build time</SelectItem>
             {BUILD_TIMES.map((time) => (
               <SelectItem key={time.value} value={time.value}>
                 {time.label}
@@ -448,7 +465,7 @@ export default function IdeasList() {
                           selectedCategories.length,
                           selectedDifficulties.length,
                           selectedTools.length,
-                          selectedBuildTime ? 1 : 0,
+                          selectedBuildTime && selectedBuildTime !== 'all' ? 1 : 0,
                         ].reduce((a, b) => a + b, 0)}
                       </Badge>
                     )}
@@ -457,6 +474,9 @@ export default function IdeasList() {
                 <SheetContent side="left" className="w-80 overflow-y-auto">
                   <SheetHeader>
                     <SheetTitle>Filters</SheetTitle>
+                    <SheetDescription>
+                      Filter ideas by category, difficulty, tools, and build time
+                    </SheetDescription>
                   </SheetHeader>
                   <div className="mt-6">
                     <FilterSidebar />
@@ -524,9 +544,22 @@ export default function IdeasList() {
             ) : error ? (
               <Card className="border-destructive">
                 <CardContent className="pt-6">
-                  <p className="text-destructive">
-                    Error loading ideas. Please try again later.
-                  </p>
+                  <div className="space-y-4 text-center">
+                    <p className="text-destructive font-medium">
+                      Error loading ideas
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {error instanceof Error
+                        ? error.message
+                        : 'Unable to fetch ideas. Please check your connection and try again.'}
+                    </p>
+                    <Button
+                      onClick={() => window.location.reload()}
+                      variant="outline"
+                    >
+                      Reload Page
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ) : paginatedIdeas.length === 0 ? (
@@ -553,7 +586,7 @@ export default function IdeasList() {
                   return (
                     <Card
                       key={idea.id}
-                      className={`relative hover:shadow-lg transition-shadow ${
+                      className={`relative card-hover group ${
                         isLocked ? 'opacity-75' : ''
                       }`}
                     >
@@ -571,7 +604,7 @@ export default function IdeasList() {
                             {idea.difficulty}
                           </Badge>
                         </div>
-                        <CardTitle className="text-xl line-clamp-2">
+                        <CardTitle className="text-xl line-clamp-2 group-hover:text-primary transition-colors">
                           {idea.title}
                         </CardTitle>
                         <CardDescription className="line-clamp-3">
@@ -615,11 +648,27 @@ export default function IdeasList() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <Button asChild className="w-full" disabled={isLocked}>
-                          <Link to={`/ideas/${idea.id}`}>
-                            {isLocked ? 'Sign Up to View' : 'View Details'}
-                          </Link>
-                        </Button>
+                        {isLocked ? (
+                          <Button 
+                            className="w-full shadow-md hover:shadow-lg transition-all duration-300" 
+                            disabled={true}
+                          >
+                            Sign Up to View
+                          </Button>
+                        ) : (
+                          <Button 
+                            asChild
+                            variant="ghost"
+                            className="w-full shadow-md hover:shadow-lg transition-all duration-300 text-white border-none"
+                          >
+                            <Link 
+                              to={`/ideas/${idea.id}`} 
+                              className="text-white rounded-md btn-gradient-link"
+                            >
+                              View Details
+                            </Link>
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   );

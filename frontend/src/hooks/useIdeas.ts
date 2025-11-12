@@ -55,7 +55,15 @@ export function useIdeas(
 ) {
   return useQuery({
     queryKey: ideaKeys.list(filters),
-    queryFn: () => getIdeas(filters),
+    queryFn: async () => {
+      try {
+        return await getIdeas(filters);
+      } catch (error) {
+        console.error('Error fetching ideas:', error);
+        throw error;
+      }
+    },
+    retry: false, // Disable retries to prevent cascading errors
     ...options,
   });
 }

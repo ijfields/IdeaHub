@@ -13,7 +13,7 @@ interface NewsBannerProps {
 export function NewsBanner({
   id = 'anthropic-campaign-2025',
   title = 'Limited Time Campaign',
-  message = 'Build AI projects with free Anthropic Claude Code credits! Campaign ends November 18, 2025.',
+  message = 'Build AI projects with free Anthropic Claude Code Web credits! Campaign ends November 18, 2025.',
   link = '/ideas',
   linkText = 'Explore Ideas',
 }: NewsBannerProps) {
@@ -38,7 +38,7 @@ export function NewsBanner({
   }
 
   return (
-    <div className="relative w-full bg-gradient-to-r from-primary-500 via-accent-500 to-primary-600 text-white">
+    <div className="relative w-full bg-gradient-to-r from-primary-600 via-primary-500 to-accent-500 text-white shadow-md">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-1">

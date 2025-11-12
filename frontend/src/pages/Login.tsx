@@ -72,18 +72,31 @@ export default function Login() {
    * Handle form submission
    */
   const onSubmit = async (data: LoginFormValues) => {
+    console.log('🔵 LOGIN: Form submitted with email:', data.email);
+    
     try {
+      console.log('🔵 LOGIN: Calling signIn...');
       const { error } = await signIn(data.email, data.password);
+      console.log('🔵 LOGIN: signIn returned, error:', error?.message || 'None');
 
       if (error) {
         // Show error toast
+        console.error('🔴 LOGIN: Sign in failed:', error);
         toast({
           title: 'Login Failed',
           description: error.message || 'Invalid email or password',
+          variant: 'destructive',
         });
         return;
       }
 
+      console.log('🟢 LOGIN: Sign in successful, waiting for auth state update...');
+      
+      // Wait a moment for auth state to update (increased timeout)
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('🟢 LOGIN: Showing success toast and redirecting...');
+      
       // Show success toast
       toast({
         title: 'Welcome back!',
@@ -93,9 +106,11 @@ export default function Login() {
       // Redirect to home page
       navigate('/');
     } catch (error) {
+      console.error('🔴 LOGIN: Unexpected error:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -194,7 +209,7 @@ export default function Login() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full"
+              className="w-full btn-gradient"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

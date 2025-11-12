@@ -19,6 +19,7 @@ import {
 } from '@/lib/api-client';
 import type { Comment, ApiResponse } from '@/lib/api-client';
 import { ideaKeys } from './useIdeas';
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * Query key factory for comments
@@ -95,6 +96,7 @@ export function useComments(
  */
 export function useCreateComment() {
   const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
 
   return useMutation({
     mutationFn: ({
@@ -118,16 +120,20 @@ export function useCreateComment() {
       );
 
       // Optimistically update to the new value
-      if (previousComments?.data) {
+      if (previousComments?.data && user) {
         const optimisticComment: Comment = {
           id: `temp-${Date.now()}`,
           idea_id: ideaId,
-          user_id: 'current-user', // Will be replaced with actual user ID
+          user_id: user.id,
           parent_comment_id: parentCommentId || null,
           content,
           flagged_for_moderation: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          user: {
+            display_name: profile?.display_name || null,
+            email: user.email || null,
+          },
         };
 
         queryClient.setQueryData<ApiResponse<Comment[]>>(
@@ -150,7 +156,13 @@ export function useCreateComment() {
           context.previousComments
         );
       }
-      console.error('Error creating comment:', err);
+      console.error('🔴 COMMENT MUTATION ERROR:', err);
+      console.error('   Error details:', {
+        message: (err as any)?.message,
+        response: (err as any)?.response?.data,
+        status: (err as any)?.response?.status,
+        url: (err as any)?.config?.url,
+      });
     },
 
     // Always refetch after error or success

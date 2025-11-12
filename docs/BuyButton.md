@@ -1,0 +1,11 @@
+The "Buy button" is described in this video as the most important piece of business advice for AI solopreneurs and creators: **every person should have a button on the internet that allows someone to exchange value with them directly**. In practical terms, this means you need a clear "Buy," "Download," "Book," or "Hire" button—a digital way for people to pay, hire, or contact you easily.
+
+- **Premise**: The button is a gateway to enable digital self-reliance and direct monetization in the AI era. It allows anyone, without technical knowledge or a team, to offer products, services, or expertise online and receive payments instantly. The "Buy button" provides a simple mechanism for turning audience engagement (followers or community) into revenue, whether selling digital products, offering services, or gaining contact/emails.
+- **Philosophy**: You don't need to build a complex company or be a developer. What matters most in starting is making sure you have a visible, actionable way people can convert their interest into support, purchases, or leads—removing barriers and intermediaries.
+- **Framework Context**: This is presented as the foundational step in Dom Ashburn (Mr. Grateful)'s framework for building an AI-native business: combine AI tools, mindfulness, and social media to build technology fast and then share and sell it directly with your audience using the button as your point of transaction.
+- **Business Impact**: The video emphasizes the shift toward *direct creator-to-consumer transactions*, empowering individuals to monetize their expertise, stories, or products without needing a large business structure or employees. The buy button is the minimal viable step to being "in business" today—make something of value and let people pay or support you directly via a button.
+
+**Summary**: The buy button is your direct invitation for others to exchange value with you—making digital entrepreneurship accessible, fast, and frictionless in a world fueled by AI tools and creator communities.[1]
+
+
+[1](https://www.youtube.com/watch?v=BomBqs5w5cA&t=696s)

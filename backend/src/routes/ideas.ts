@@ -59,6 +59,11 @@ router.get(
       .optional()
       .isIn(['popular', 'recent', 'difficulty', 'title'])
       .withMessage('Sort must be popular, recent, difficulty, or title'),
+    query('free_tier')
+      .optional()
+      .isBoolean()
+      .toBoolean()
+      .withMessage('free_tier must be a boolean'),
   ],
   asyncHandler(async (req: Request, res: Response) => {
     // Validate request
@@ -73,21 +78,153 @@ router.get(
     const difficulty = req.query.difficulty as string | undefined;
     const searchTerm = req.query.search as string | undefined;
     const sort = (req.query.sort as string) || 'recent';
+    // Handle free_tier parameter - it can come as string 'true'/'false' or boolean
+    const freeTierParam = req.query.free_tier;
+    const freeTierFilter = freeTierParam === 'true' || freeTierParam === true || freeTierParam === '1';
     const isAuthenticated = !!req.userId;
+    
+    // Debug logging - MORE VISIBLE
+    console.log('\n═══════════════════════════════════════════════════════════');
+    console.log('🔵 BACKEND: GET /api/ideas REQUEST RECEIVED');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('Query params:', {
+      page,
+      limit,
+      category,
+      difficulty,
+      searchTerm,
+      sort,
+      freeTierParam,
+      freeTierFilter,
+      isAuthenticated,
+      userId: req.userId,
+    });
+    console.log('═══════════════════════════════════════════════════════════\n');
 
     // Calculate offset for pagination
     const offset = (page - 1) * limit;
 
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      throw new Error('Database connection not available');
+    }
+
     // Build query
-    let query = supabaseAdmin!.from('ideas').select('*', { count: 'exact' });
+    let query = supabaseAdmin.from('ideas').select('*', { count: 'exact' });
 
     // Apply tier-based access control
-    // Guests can only see free_tier ideas, authenticated users see all
+    // Guests can only see free_tier ideas OR BuyButton (special case), authenticated users see all
     if (!isAuthenticated) {
-      query = query.eq('free_tier', true);
+      // Fetch free_tier ideas and BuyButton separately, then combine
+      // Supabase .or() doesn't work well with ilike, so we'll use a different approach
+      // First, get free_tier ideas
+      const { data: freeTierIdeas, error: freeTierError } = await supabaseAdmin
+        .from('ideas')
+        .select('*')
+        .eq('free_tier', true);
+      
+      console.log('\n🟢 BACKEND: Guest free_tier query result:');
+      console.log('   Count:', freeTierIdeas?.length || 0);
+      console.log('   Error:', freeTierError?.message || 'None');
+      console.log('   Sample IDs:', freeTierIdeas?.slice(0, 3).map(i => i.id) || []);
+      
+      // Then get BuyButton idea (case-insensitive search)
+      const { data: buyButtonIdeas, error: buyButtonError } = await supabaseAdmin
+        .from('ideas')
+        .select('*')
+        .ilike('title', '%BuyButton%')
+        .eq('free_tier', false);
+      
+      console.log('\n🟢 BACKEND: Guest BuyButton query result:');
+      console.log('   Count:', buyButtonIdeas?.length || 0);
+      console.log('   Error:', buyButtonError?.message || 'None');
+      
+      if (freeTierError || buyButtonError) {
+        console.error('Error fetching ideas:', freeTierError || buyButtonError);
+        throw new Error('Failed to fetch ideas');
+      }
+      
+      // Combine and deduplicate by ID
+      const allIdeas = [...(freeTierIdeas || []), ...(buyButtonIdeas || [])];
+      const uniqueIdeas = Array.from(new Map(allIdeas.map(idea => [idea.id, idea])).values());
+      
+      // Now apply filters, search, and sorting to the combined list
+      let filteredIdeas = uniqueIdeas;
+      
+      // Apply category filter
+      if (category) {
+        filteredIdeas = filteredIdeas.filter(idea => idea.category === category);
+      }
+      
+      // Apply difficulty filter
+      if (difficulty) {
+        filteredIdeas = filteredIdeas.filter(idea => idea.difficulty === difficulty);
+      }
+      
+      // Apply search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        filteredIdeas = filteredIdeas.filter(idea =>
+          idea.title.toLowerCase().includes(searchLower) ||
+          idea.description?.toLowerCase().includes(searchLower) ||
+          idea.tools?.some(tool => tool.toLowerCase().includes(searchLower)) ||
+          idea.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      // Apply sorting
+      switch (sort) {
+        case 'popular':
+          filteredIdeas.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+          break;
+        case 'recent':
+          filteredIdeas.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          break;
+        case 'difficulty':
+          const difficultyOrder = { 'Beginner': 1, 'Intermediate': 2, 'Advanced': 3 };
+          filteredIdeas.sort((a, b) => (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0) - (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0));
+          break;
+        case 'title':
+          filteredIdeas.sort((a, b) => a.title.localeCompare(b.title));
+          break;
+      }
+      
+      // Apply pagination
+      const total = filteredIdeas.length;
+      const paginatedIdeas = filteredIdeas.slice(offset, offset + limit);
+      const pagination = buildPaginationMeta(total, page, limit);
+      
+      console.log('\n🟢 BACKEND: Sending guest response:');
+      console.log('   Total ideas:', total);
+      console.log('   Paginated ideas:', paginatedIdeas.length);
+      console.log('   First idea title:', paginatedIdeas[0]?.title || 'None');
+      console.log('═══════════════════════════════════════════════════════════\n');
+      
+      return res.json({
+        success: true,
+        data: paginatedIdeas,
+        pagination,
+        filters: {
+          category,
+          difficulty,
+          search: searchTerm,
+          sort,
+          tier: 'guest',
+        },
+      });
     }
 
     // Apply filters
+    // IMPORTANT: Only apply free_tier filter if explicitly requested
+    // For authenticated users without free_tier param, show ALL ideas
+    if (freeTierFilter) {
+      console.log('🟡 BACKEND: Applying free_tier filter (authenticated user requested free tier only)');
+      query = query.eq('free_tier', true);
+    } else {
+      console.log('🟢 BACKEND: No free_tier filter - returning ALL ideas for authenticated user');
+    }
+
     if (category) {
       query = query.eq('category', category);
     }
@@ -123,11 +260,45 @@ router.get(
         query = query.order('created_at', { ascending: false });
     }
 
-    // Apply pagination
+    // Get total count BEFORE pagination (for accurate pagination metadata)
+    // Build count query with same filters as main query
+    let countQuery = supabaseAdmin.from('ideas').select('id', { count: 'exact', head: true });
+    
+    // Apply same filters to count query
+    if (freeTierFilter) {
+      countQuery = countQuery.eq('free_tier', true);
+    }
+    if (category) {
+      countQuery = countQuery.eq('category', category);
+    }
+    if (difficulty) {
+      countQuery = countQuery.eq('difficulty', difficulty);
+    }
+    if (searchTerm) {
+      countQuery = countQuery.or(
+        `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,tags.cs.{${searchTerm}},tools.cs.{${searchTerm}}`
+      );
+    }
+    
+    const { count: totalCount } = await countQuery;
+    
+    // Apply pagination to main query
     query = query.range(offset, offset + limit - 1);
 
-    // Execute query
-    const { data: ideas, error, count } = await query;
+    // Execute query for paginated data
+    const { data: ideas, error } = await query;
+    const count = totalCount || 0;
+
+    console.log('\n🟢 BACKEND: Authenticated user query result:');
+    console.log('   Ideas returned:', ideas?.length || 0);
+    console.log('   Total count (all matching):', count);
+    console.log('   Free tier filter:', freeTierFilter);
+    console.log('   Is authenticated:', isAuthenticated);
+    console.log('   Error:', error?.message || 'None');
+    if (ideas && ideas.length > 0) {
+      console.log('   Sample titles:', ideas.slice(0, 5).map(i => `${i.title} (free_tier: ${i.free_tier})`));
+    }
+    console.log('═══════════════════════════════════════════════════════════\n');
 
     if (error) {
       console.error('Database error fetching ideas:', error);
@@ -211,12 +382,61 @@ router.get(
     const isAuthenticated = !!req.userId;
     const offset = (page - 1) * limit;
 
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      throw new Error('Database connection not available');
+    }
+
     // Build search query
-    let query = supabaseAdmin!.from('ideas').select('*', { count: 'exact' });
+    let query = supabaseAdmin.from('ideas').select('*', { count: 'exact' });
 
     // Apply tier-based access control
+    // Guests can only see free_tier ideas OR BuyButton (special case)
     if (!isAuthenticated) {
-      query = query.eq('free_tier', true);
+      // Fetch free_tier ideas and BuyButton separately, then combine
+      const { data: freeTierIdeas, error: freeTierError } = await supabaseAdmin
+        .from('ideas')
+        .select('*')
+        .eq('free_tier', true);
+      
+      const { data: buyButtonIdeas, error: buyButtonError } = await supabaseAdmin
+        .from('ideas')
+        .select('*')
+        .ilike('title', '%BuyButton%')
+        .eq('free_tier', false);
+      
+      if (freeTierError || buyButtonError) {
+        console.error('Error fetching ideas:', freeTierError || buyButtonError);
+        throw new Error('Failed to fetch ideas');
+      }
+      
+      const allIdeas = [...(freeTierIdeas || []), ...(buyButtonIdeas || [])];
+      const uniqueIdeas = Array.from(new Map(allIdeas.map(idea => [idea.id, idea])).values());
+      
+      let filteredIdeas = uniqueIdeas;
+      
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase();
+        filteredIdeas = filteredIdeas.filter(idea =>
+          idea.title.toLowerCase().includes(searchLower) ||
+          idea.description?.toLowerCase().includes(searchLower) ||
+          idea.tools?.some(tool => tool.toLowerCase().includes(searchLower)) ||
+          idea.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      filteredIdeas.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+      const paginatedIdeas = filteredIdeas.slice(offset, offset + limit);
+      const total = filteredIdeas.length;
+      const pagination = buildPaginationMeta(total, page, limit);
+      
+      return res.json({
+        success: true,
+        data: paginatedIdeas,
+        pagination,
+        query: searchQuery,
+      });
     }
 
     // Search across multiple fields
@@ -276,13 +496,52 @@ router.get(
     const isAuthenticated = !!req.userId;
     const offset = (page - 1) * limit;
 
-    // Build query
-    let query = supabaseAdmin!.from('ideas').select('*', { count: 'exact' }).eq('category', category);
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      throw new Error('Database connection not available');
+    }
 
     // Apply tier-based access control
+    // Guests can only see free_tier ideas OR BuyButton (special case)
     if (!isAuthenticated) {
-      query = query.eq('free_tier', true);
+      // Fetch free_tier ideas and BuyButton separately, then filter by category
+      const { data: freeTierIdeas, error: freeTierError } = await supabaseAdmin
+        .from('ideas')
+        .select('*')
+        .eq('free_tier', true)
+        .eq('category', category);
+      
+      const { data: buyButtonIdeas, error: buyButtonError } = await supabaseAdmin
+        .from('ideas')
+        .select('*')
+        .ilike('title', '%BuyButton%')
+        .eq('free_tier', false)
+        .eq('category', category);
+      
+      if (freeTierError || buyButtonError) {
+        console.error('Error fetching ideas by category:', freeTierError || buyButtonError);
+        throw new Error('Failed to fetch ideas by category');
+      }
+      
+      const allIdeas = [...(freeTierIdeas || []), ...(buyButtonIdeas || [])];
+      const uniqueIdeas = Array.from(new Map(allIdeas.map(idea => [idea.id, idea])).values());
+      
+      uniqueIdeas.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const paginatedIdeas = uniqueIdeas.slice(offset, offset + limit);
+      const total = uniqueIdeas.length;
+      const pagination = buildPaginationMeta(total, page, limit);
+      
+      return res.json({
+        success: true,
+        data: paginatedIdeas,
+        pagination,
+        category,
+      });
     }
+
+    // For authenticated users, use normal query
+    let query = supabaseAdmin.from('ideas').select('*', { count: 'exact' }).eq('category', category);
 
     // Sort and paginate
     query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
@@ -307,6 +566,77 @@ router.get(
 );
 
 /**
+ * GET /api/ideas/:ideaId/projects
+ * Get all project links for a specific idea
+ * No authentication required (public read)
+ * NOTE: This route must come BEFORE /:id to avoid route conflicts
+ */
+router.get(
+  '/:ideaId/projects',
+  [param('ideaId').isUUID().withMessage('Invalid idea ID')],
+  asyncHandler(async (req: Request, res: Response) => {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw badRequest(errors.array()[0].msg);
+    }
+
+    const { ideaId } = req.params;
+
+    // Query project links with user display name via join
+    const { data: projects, error } = await supabaseAdmin
+      .from('project_links')
+      .select(
+        `
+        id,
+        idea_id,
+        user_id,
+        title,
+        url,
+        description,
+        tools_used,
+        created_at,
+        updated_at,
+        users!project_links_user_id_fkey (
+          display_name,
+          email
+        )
+      `
+      )
+      .eq('idea_id', ideaId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching project links:', error);
+      throw new Error('Failed to fetch project links');
+    }
+
+    // Transform the response to flatten the user data
+    const transformedProjects = (projects || []).map((project: any) => ({
+      id: project.id,
+      idea_id: project.idea_id,
+      user_id: project.user_id,
+      title: project.title,
+      url: project.url,
+      description: project.description,
+      tools_used: project.tools_used,
+      created_at: project.created_at,
+      updated_at: project.updated_at,
+      user: {
+        display_name: project.users?.display_name || null,
+        email: project.users?.email || null,
+      },
+    }));
+
+    return res.status(200).json({
+      success: true,
+      count: transformedProjects.length,
+      data: transformedProjects,
+    });
+  })
+);
+
+/**
  * GET /api/ideas/:id
  * Get single idea details by ID
  * Uses optionalAuth - guests can only access free_tier ideas
@@ -326,31 +656,111 @@ router.get(
     const ideaId = req.params.id;
     const isAuthenticated = !!req.userId;
 
-    // Fetch idea from database
-    const { data: idea, error } = await supabase
+    console.log('\n═══════════════════════════════════════════════════════════');
+    console.log('🔵 BACKEND: GET /api/ideas/:id REQUEST RECEIVED');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('Idea ID:', ideaId);
+    console.log('Authenticated:', isAuthenticated);
+    console.log('User ID:', req.userId);
+    console.log('═══════════════════════════════════════════════════════════\n');
+
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      throw new Error('Database connection not available');
+    }
+
+    // Fetch idea from database using admin client to bypass RLS
+    const { data: idea, error } = await supabaseAdmin
       .from('ideas')
       .select('*')
       .eq('id', ideaId)
       .single();
 
+    console.log('🔵 BACKEND: Database query result:');
+    console.log('   Has idea:', !!idea);
+    console.log('   Error:', error?.message || 'None');
+    if (idea) {
+      console.log('   Title:', idea.title);
+      console.log('   Free tier:', idea.free_tier);
+    }
+
     if (error || !idea) {
+      console.error('🔴 BACKEND: Idea not found or error:', error);
       throw notFound('Idea not found');
     }
 
-    // Access control: guests can only see free_tier ideas
-    if (!isAuthenticated && !idea.free_tier) {
+    // Access control: guests can only see free_tier ideas OR BuyButton (special case)
+    const isBuyButton = idea.title.toLowerCase().includes('buybutton') || idea.title.toLowerCase().includes('buy button');
+    if (!isAuthenticated && !idea.free_tier && !isBuyButton) {
+      console.log('🔴 BACKEND: Access denied - requires authentication');
       throw forbidden('This idea requires authentication. Please sign up or log in to access.');
     }
 
-    // Special handling for BuyButton or other tiered content
-    // If the idea has tiered content detail, we could modify the response here
-    // For now, we return the full idea for authenticated users
-    // Future enhancement: check if idea.title includes "BuyButton" and modify response
+    console.log('🟢 BACKEND: Sending idea response');
+    console.log('   Access level:', isAuthenticated ? 'full' : 'free_tier');
+    console.log('═══════════════════════════════════════════════════════════\n');
 
     res.json({
       success: true,
       data: idea,
       access: isAuthenticated ? 'full' : 'free_tier',
+    });
+  })
+);
+
+/**
+ * POST /api/ideas/:id/view
+ * Increment view count for an idea (no auth required)
+ * Uses atomic increment to avoid race conditions
+ * NOTE: Frontend calls POST, but PATCH is also supported
+ */
+router.post(
+  '/:id/view',
+  [param('id').notEmpty().isUUID().withMessage('Valid UUID is required for idea ID')],
+  asyncHandler(async (req: Request, res: Response) => {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw badRequest(errors.array()[0].msg);
+    }
+
+    const ideaId = req.params.id;
+
+    // First, check if idea exists
+    const { data: existingIdea, error: fetchError } = await supabaseAdmin
+      .from('ideas')
+      .select('id, view_count')
+      .eq('id', ideaId)
+      .single();
+
+    if (fetchError || !existingIdea) {
+      throw notFound('Idea not found');
+    }
+
+    // Atomically increment view_count using PostgreSQL function or manual increment
+    // Note: Supabase/PostgreSQL supports increment operations
+    const newViewCount = (existingIdea.view_count || 0) + 1;
+
+    const { data: updatedIdea, error: updateError } = await supabaseAdmin
+      .from('ideas')
+      .update({ view_count: newViewCount })
+      .eq('id', ideaId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('Database error incrementing view count:', updateError);
+      throw new Error('Failed to increment view count');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: ideaId,
+        view_count: updatedIdea.view_count,
+      },
+      message: 'View count incremented successfully',
     });
   })
 );
@@ -373,7 +783,7 @@ router.patch(
     const ideaId = req.params.id;
 
     // First, check if idea exists
-    const { data: existingIdea, error: fetchError } = await supabase
+    const { data: existingIdea, error: fetchError } = await supabaseAdmin
       .from('ideas')
       .select('id, view_count')
       .eq('id', ideaId)
@@ -387,7 +797,7 @@ router.patch(
     // Note: Supabase/PostgreSQL supports increment operations
     const newViewCount = (existingIdea.view_count || 0) + 1;
 
-    const { data: updatedIdea, error: updateError } = await supabase
+    const { data: updatedIdea, error: updateError } = await supabaseAdmin
       .from('ideas')
       .update({ view_count: newViewCount })
       .eq('id', ideaId)
