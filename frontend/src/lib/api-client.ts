@@ -370,8 +370,11 @@ class ApiClient {
     }
   ): Promise<ApiResponse<ProjectLink>> {
     const response = await this.client.post<ApiResponse<ProjectLink>>(
-      `/ideas/${ideaId}/projects`,
-      data
+      '/projects',
+      {
+        idea_id: ideaId,
+        ...data,
+      }
     );
     return response.data;
   }
