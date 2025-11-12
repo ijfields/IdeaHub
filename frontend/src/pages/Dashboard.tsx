@@ -47,20 +47,14 @@ export default function Dashboard() {
     );
   }
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (ProtectedRoute should handle this, but double-check)
+  if (!authLoading && !user) {
+    return null; // ProtectedRoute will handle redirect
+  }
+
+  // Ensure user exists before rendering (should be guaranteed by ProtectedRoute)
   if (!user) {
-    return (
-      <MainLayout>
-        <div className="max-w-7xl mx-auto py-8 px-4">
-          <div className="text-center py-12">
-            <p className="text-lg mb-4">Please sign in to view your dashboard</p>
-            <Button asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
-          </div>
-        </div>
-      </MainLayout>
-    );
+    return null;
   }
 
   const fetchUserProjects = async () => {
@@ -74,10 +68,15 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching projects:', error);
+        setProjects([]); // Set empty array on error
+        return;
+      }
       setProjects(data || []);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      setProjects([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }
@@ -104,6 +103,11 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
+      // Set default stats on error
+      setStats({
+        projectsCount: 0,
+        commentsCount: 0,
+      });
     }
   };
 
@@ -196,15 +200,21 @@ export default function Dashboard() {
                           ))}
                         </div>
                       )}
-                      <a
-                        href={project.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline flex items-center gap-1"
-                      >
-                        View Project
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                      {project.url && !project.url.startsWith('http://localhost') && !project.url.startsWith('https://localhost') ? (
+                        <a
+                          href={project.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline flex items-center gap-1"
+                        >
+                          View Project
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          {project.url ? 'Invalid project URL (localhost not allowed)' : 'No project URL provided'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}

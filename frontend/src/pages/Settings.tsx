@@ -49,9 +49,14 @@ export default function Settings() {
     );
   }
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (ProtectedRoute should handle this, but double-check)
+  if (!authLoading && !user) {
+    navigate('/login', { replace: true });
+    return null; // ProtectedRoute will handle redirect
+  }
+
+  // Ensure user exists (should be guaranteed by ProtectedRoute)
   if (!user) {
-    navigate('/login');
     return null;
   }
 

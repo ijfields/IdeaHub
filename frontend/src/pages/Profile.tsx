@@ -98,10 +98,11 @@ export default function Profile() {
 
   /**
    * Redirect to login if not authenticated
+   * ProtectedRoute handles this, but we keep this as a safety check
    */
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -154,6 +155,11 @@ export default function Profile() {
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
+      // Set default stats on error
+      setUserStats({
+        projectsCount: 0,
+        commentsCount: 0,
+      });
     } finally {
       setIsLoadingStats(false);
     }
@@ -282,8 +288,18 @@ export default function Profile() {
     );
   }
 
+  // Redirect if not authenticated (ProtectedRoute should handle this, but double-check)
+  if (!authLoading && !user) {
+    return null; // ProtectedRoute will handle redirect
+  }
+
+  // Ensure user exists (should be guaranteed by ProtectedRoute)
+  if (!user) {
+    return null;
+  }
+
   // If no profile but user exists, use user email as fallback
-  const displayName = profile?.display_name || user?.email || '';
+  const displayName = profile?.display_name || user?.email || 'User';
   const bio = profile?.bio || '';
 
   return (
@@ -354,7 +370,7 @@ export default function Profile() {
                       <Mail className="h-4 w-4" />
                       <span>Email</span>
                     </Label>
-                    <p className="text-sm text-muted-foreground">{user?.email || 'No email'}</p>
+                    <p className="text-sm text-muted-foreground">{user?.email || 'Email not available'}</p>
                   </div>
 
                   {/* Join Date */}

@@ -316,30 +316,62 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       console.log('🔵 AUTH: Starting sign out...');
       
-      // Clear local state FIRST to ensure UI updates immediately
+      // Sign out from Supabase FIRST to clear the session
+      // Use a timeout to prevent hanging
+      const signOutPromise = supabase.auth.signOut();
+      const timeoutPromise = new Promise<{ error: AuthError }>((resolve) =>
+        setTimeout(() => resolve({ error: { message: 'Sign out timeout', name: 'TimeoutError', status: 408 } as AuthError }), 3000)
+      );
+
+      const result = await Promise.race([signOutPromise, timeoutPromise]);
+      
+      // Clear local state AFTER sign out attempt (regardless of success/failure)
+      // This ensures the UI updates immediately and prevents auto-login
       setUser(null);
       setSession(null);
       setProfile(null);
 
-      // Then attempt Supabase sign out (with timeout)
-      const signOutPromise = supabase.auth.signOut();
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Sign out timeout after 3 seconds')), 3000)
-      );
+      // Also manually clear localStorage session to prevent auto-login
+      if (typeof window !== 'undefined') {
+        // Clear all Supabase-related localStorage keys
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log('🔵 AUTH: Cleared localStorage keys:', keysToRemove.length);
+      }
 
-      const { error } = await Promise.race([signOutPromise, timeoutPromise]);
-
-      if (error) {
-        console.error('🔴 AUTH: Sign out error:', error);
+      if (result.error) {
+        console.error('🔴 AUTH: Sign out error:', result.error);
         // State is already cleared, so return error but don't block
-        return { error };
+        return { error: result.error };
       }
 
       console.log('🟢 AUTH: Sign out successful');
       return { error: null };
     } catch (error: any) {
       console.error('🔴 AUTH: Sign out exception:', error?.message || error);
-      // State is already cleared, so return error but don't block
+      // Clear state even on exception
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      // Clear localStorage on exception too
+      if (typeof window !== 'undefined') {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      }
+      
       return { error: { message: error?.message || 'Sign out failed', name: 'SignOutError' } as AuthError };
     }
   };
