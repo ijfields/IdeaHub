@@ -28,3 +28,38 @@ Reload Page
 --------
 perhaps we should have FEATURE called Campign and a feaatur called News .
 did not see the buyButton
+Submit your project is not clearly a button
+After clikcking on submit your prohect the screen turns dark and outline of a form 
+Need more clarifications regarding the buy button. Perhaps a name change to MySerices.
+Show description seems slow.
+
+## FIXED ISSUES (2025-11-12)
+
+### Backend API Routes
+- ✅ Fixed GET /api/ideas/:ideaId/projects route (moved to ideas router, placed before /:id)
+- ✅ Fixed POST /api/projects 500 error (use supabaseAdmin for RLS bypass)
+- ✅ Added POST /api/ideas/:id/view route for view count increment
+- ✅ Added /analytics alias to /metrics router for frontend compatibility
+- ✅ Added /pageview route alias in addition to /page-view
+
+### UI/UX Improvements
+- ✅ Standardized button styling with btn-gradient class on Sign In, Create Account, Submit Project buttons
+- ✅ Fixed dialog overlay transparency (solid background for forms)
+- ✅ Improved form spacing in project submission dialog
+
+### Authentication & Profile Pages
+- ✅ Fixed logout auto-login issue (sign out from Supabase first, clear localStorage)
+- ✅ Fixed empty profile pages (Profile, Dashboard, Settings) - added proper user checks and fallbacks
+- ✅ Improved error handling for missing profile data
+- ✅ Fixed AuthContext timeout handling (use global fetch timeout from supabase.ts)
+
+### Dashboard Improvements
+- ✅ Added validation to prevent localhost project URLs from opening
+- ✅ Show error message for invalid localhost URLs instead of broken links
+- ✅ Improved error handling for project and stats fetching
+
+### Known Remaining Issues
+- Profile pages may show empty cards if profile data fails to load (check console for errors)
+- Settings page route exists but may need additional content
+- Category filtering from home page needs implementation
+- BuyButton idea visibility needs verification
