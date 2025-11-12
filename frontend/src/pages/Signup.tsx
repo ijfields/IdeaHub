@@ -289,7 +289,7 @@ export default function Signup() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full btn-gradient-link"
+              className="w-full btn-gradient"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

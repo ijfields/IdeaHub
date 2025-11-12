@@ -961,7 +961,7 @@ export default function IdeaDetail() {
 
                 <Separator />
 
-                <Button className="w-full" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
+                <Button className="w-full btn-gradient" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
                   Start Building
                 </Button>
               </CardContent>
@@ -1009,7 +1009,7 @@ export default function IdeaDetail() {
                     {user ? (
                       <Dialog open={projectFormOpen} onOpenChange={setProjectFormOpen}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" className="w-full" size="sm">
+                          <Button className="w-full btn-gradient" size="sm">
                             Submit Your Project
                           </Button>
                         </DialogTrigger>
@@ -1022,8 +1022,8 @@ export default function IdeaDetail() {
                               </DialogDescription>
                             </DialogHeader>
 
-                            <div className="space-y-4 py-4">
-                              <div>
+                            <div className="space-y-5 py-6">
+                              <div className="space-y-2">
                                 <Label htmlFor="title">Project Title</Label>
                                 <Input
                                   id="title"
@@ -1033,10 +1033,11 @@ export default function IdeaDetail() {
                                   }
                                   placeholder="My Awesome AI Project"
                                   required
+                                  className="w-full"
                                 />
                               </div>
 
-                              <div>
+                              <div className="space-y-2">
                                 <Label htmlFor="url">Project URL</Label>
                                 <Input
                                   id="url"
@@ -1047,10 +1048,11 @@ export default function IdeaDetail() {
                                   }
                                   placeholder="https://example.com"
                                   required
+                                  className="w-full"
                                 />
                               </div>
 
-                              <div>
+                              <div className="space-y-2">
                                 <Label htmlFor="description">Description (Optional)</Label>
                                 <Textarea
                                   id="description"
@@ -1060,10 +1062,11 @@ export default function IdeaDetail() {
                                   }
                                   placeholder="Brief description of your project..."
                                   rows={3}
+                                  className="w-full resize-none"
                                 />
                               </div>
 
-                              <div>
+                              <div className="space-y-2">
                                 <Label htmlFor="tools">Tools Used</Label>
                                 <Input
                                   id="tools"
@@ -1075,19 +1078,25 @@ export default function IdeaDetail() {
                                     })
                                   }
                                   placeholder="Claude, Bolt, React (comma-separated)"
+                                  className="w-full"
                                 />
                               </div>
                             </div>
 
-                            <DialogFooter>
+                            <DialogFooter className="gap-3 pt-4">
                               <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setProjectFormOpen(false)}
+                                className="flex-1 sm:flex-initial"
                               >
                                 Cancel
                               </Button>
-                              <Button type="submit" disabled={createProjectMutation.isPending}>
+                              <Button 
+                                type="submit" 
+                                disabled={createProjectMutation.isPending}
+                                className="flex-1 sm:flex-initial btn-gradient"
+                              >
                                 {createProjectMutation.isPending ? 'Submitting...' : 'Submit Project'}
                               </Button>
                             </DialogFooter>
@@ -1113,7 +1122,7 @@ export default function IdeaDetail() {
                     {user ? (
                       <Dialog open={projectFormOpen} onOpenChange={setProjectFormOpen}>
                         <DialogTrigger asChild>
-                          <Button size="sm">Submit Your Project</Button>
+                          <Button size="sm" className="w-full btn-gradient">Submit Your Project</Button>
                         </DialogTrigger>
                         <DialogContent>
                           <form onSubmit={handleProjectSubmit}>
@@ -1124,8 +1133,8 @@ export default function IdeaDetail() {
                               </DialogDescription>
                             </DialogHeader>
 
-                            <div className="space-y-4 py-4">
-                              <div>
+                            <div className="space-y-5 py-6">
+                              <div className="space-y-2">
                                 <Label htmlFor="title">Project Title</Label>
                                 <Input
                                   id="title"
@@ -1135,10 +1144,11 @@ export default function IdeaDetail() {
                                   }
                                   placeholder="My Awesome AI Project"
                                   required
+                                  className="w-full"
                                 />
                               </div>
 
-                              <div>
+                              <div className="space-y-2">
                                 <Label htmlFor="url">Project URL</Label>
                                 <Input
                                   id="url"
@@ -1149,10 +1159,11 @@ export default function IdeaDetail() {
                                   }
                                   placeholder="https://example.com"
                                   required
+                                  className="w-full"
                                 />
                               </div>
 
-                              <div>
+                              <div className="space-y-2">
                                 <Label htmlFor="description">Description (Optional)</Label>
                                 <Textarea
                                   id="description"
@@ -1162,10 +1173,11 @@ export default function IdeaDetail() {
                                   }
                                   placeholder="Brief description of your project..."
                                   rows={3}
+                                  className="w-full resize-none"
                                 />
                               </div>
 
-                              <div>
+                              <div className="space-y-2">
                                 <Label htmlFor="tools">Tools Used</Label>
                                 <Input
                                   id="tools"
@@ -1177,19 +1189,25 @@ export default function IdeaDetail() {
                                     })
                                   }
                                   placeholder="Claude, Bolt, React (comma-separated)"
+                                  className="w-full"
                                 />
                               </div>
                             </div>
 
-                            <DialogFooter>
+                            <DialogFooter className="gap-3 pt-4">
                               <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setProjectFormOpen(false)}
+                                className="flex-1 sm:flex-initial"
                               >
                                 Cancel
                               </Button>
-                              <Button type="submit" disabled={createProjectMutation.isPending}>
+                              <Button 
+                                type="submit" 
+                                disabled={createProjectMutation.isPending}
+                                className="flex-1 sm:flex-initial btn-gradient"
+                              >
                                 {createProjectMutation.isPending ? 'Submitting...' : 'Submit Project'}
                               </Button>
                             </DialogFooter>

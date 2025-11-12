@@ -87,28 +87,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const fetchProfile = async (userId: string): Promise<User | null> => {
     console.log('🔵 AUTH: Fetching profile for user:', userId);
     try {
-      // Add timeout to prevent hanging
-      const profilePromise = supabase
+      // Supabase client already has timeout handling via custom fetch wrapper (10 seconds)
+      // Just make the request - timeout is handled globally
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout after 5 seconds')), 5000)
-      );
-
-      const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
-
       if (error) {
-        console.error('🔴 AUTH: Error fetching user profile:', error);
+        // Don't log timeout/abort errors as errors - they're expected in some cases
+        if (error.message?.includes('aborted') || error.message?.includes('timeout') || error.message?.includes('fetch')) {
+          console.warn('🟡 AUTH: Profile fetch timed out or failed, continuing without profile');
+        } else {
+          console.error('🔴 AUTH: Error fetching user profile:', error);
+        }
         return null;
       }
 
       console.log('🟢 AUTH: Profile fetched successfully');
       return data;
     } catch (error: any) {
-      console.error('🔴 AUTH: Exception fetching user profile:', error?.message || error);
+      // Handle errors gracefully - don't block the app
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted') || error?.message?.includes('timeout')) {
+        console.warn('🟡 AUTH: Profile fetch aborted/timed out, continuing without profile');
+      } else {
+        console.error('🔴 AUTH: Exception fetching user profile:', error?.message || error);
+      }
       // Return null on timeout or error - don't block the app
       return null;
     }

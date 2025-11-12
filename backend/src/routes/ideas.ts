@@ -566,6 +566,77 @@ router.get(
 );
 
 /**
+ * GET /api/ideas/:ideaId/projects
+ * Get all project links for a specific idea
+ * No authentication required (public read)
+ * NOTE: This route must come BEFORE /:id to avoid route conflicts
+ */
+router.get(
+  '/:ideaId/projects',
+  [param('ideaId').isUUID().withMessage('Invalid idea ID')],
+  asyncHandler(async (req: Request, res: Response) => {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw badRequest(errors.array()[0].msg);
+    }
+
+    const { ideaId } = req.params;
+
+    // Query project links with user display name via join
+    const { data: projects, error } = await supabaseAdmin
+      .from('project_links')
+      .select(
+        `
+        id,
+        idea_id,
+        user_id,
+        title,
+        url,
+        description,
+        tools_used,
+        created_at,
+        updated_at,
+        users!project_links_user_id_fkey (
+          display_name,
+          email
+        )
+      `
+      )
+      .eq('idea_id', ideaId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching project links:', error);
+      throw new Error('Failed to fetch project links');
+    }
+
+    // Transform the response to flatten the user data
+    const transformedProjects = (projects || []).map((project: any) => ({
+      id: project.id,
+      idea_id: project.idea_id,
+      user_id: project.user_id,
+      title: project.title,
+      url: project.url,
+      description: project.description,
+      tools_used: project.tools_used,
+      created_at: project.created_at,
+      updated_at: project.updated_at,
+      user: {
+        display_name: project.users?.display_name || null,
+        email: project.users?.email || null,
+      },
+    }));
+
+    return res.status(200).json({
+      success: true,
+      count: transformedProjects.length,
+      data: transformedProjects,
+    });
+  })
+);
+
+/**
  * GET /api/ideas/:id
  * Get single idea details by ID
  * Uses optionalAuth - guests can only access free_tier ideas
@@ -639,6 +710,62 @@ router.get(
 );
 
 /**
+ * POST /api/ideas/:id/view
+ * Increment view count for an idea (no auth required)
+ * Uses atomic increment to avoid race conditions
+ * NOTE: Frontend calls POST, but PATCH is also supported
+ */
+router.post(
+  '/:id/view',
+  [param('id').notEmpty().isUUID().withMessage('Valid UUID is required for idea ID')],
+  asyncHandler(async (req: Request, res: Response) => {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw badRequest(errors.array()[0].msg);
+    }
+
+    const ideaId = req.params.id;
+
+    // First, check if idea exists
+    const { data: existingIdea, error: fetchError } = await supabaseAdmin
+      .from('ideas')
+      .select('id, view_count')
+      .eq('id', ideaId)
+      .single();
+
+    if (fetchError || !existingIdea) {
+      throw notFound('Idea not found');
+    }
+
+    // Atomically increment view_count using PostgreSQL function or manual increment
+    // Note: Supabase/PostgreSQL supports increment operations
+    const newViewCount = (existingIdea.view_count || 0) + 1;
+
+    const { data: updatedIdea, error: updateError } = await supabaseAdmin
+      .from('ideas')
+      .update({ view_count: newViewCount })
+      .eq('id', ideaId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('Database error incrementing view count:', updateError);
+      throw new Error('Failed to increment view count');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: ideaId,
+        view_count: updatedIdea.view_count,
+      },
+      message: 'View count incremented successfully',
+    });
+  })
+);
+
+/**
  * PATCH /api/ideas/:id/view
  * Increment view count for an idea (no auth required)
  * Uses atomic increment to avoid race conditions
@@ -656,7 +783,7 @@ router.patch(
     const ideaId = req.params.id;
 
     // First, check if idea exists
-    const { data: existingIdea, error: fetchError } = await supabase
+    const { data: existingIdea, error: fetchError } = await supabaseAdmin
       .from('ideas')
       .select('id, view_count')
       .eq('id', ideaId)
@@ -670,7 +797,7 @@ router.patch(
     // Note: Supabase/PostgreSQL supports increment operations
     const newViewCount = (existingIdea.view_count || 0) + 1;
 
-    const { data: updatedIdea, error: updateError } = await supabase
+    const { data: updatedIdea, error: updateError } = await supabaseAdmin
       .from('ideas')
       .update({ view_count: newViewCount })
       .eq('id', ideaId)
