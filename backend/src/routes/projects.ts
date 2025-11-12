@@ -65,6 +65,15 @@ router.post(
       const { idea_id, title, url, description, tools_used } = req.body;
       const userId = req.userId;
 
+      // Check if Supabase admin client is available
+      if (!supabaseAdmin) {
+        console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+        return res.status(500).json({
+          error: 'Internal Server Error',
+          message: 'Database connection not available',
+        });
+      }
+
       // Verify the idea exists
       const { data: idea, error: ideaError } = await supabaseAdmin
         .from('ideas')
@@ -194,6 +203,15 @@ router.patch(
         });
       }
 
+      // Check if Supabase admin client is available
+      if (!supabaseAdmin) {
+        console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+        return res.status(500).json({
+          error: 'Internal Server Error',
+          message: 'Database connection not available',
+        });
+      }
+
       // Fetch the existing project to verify ownership
       const { data: existingProject, error: fetchError } = await supabaseAdmin
         .from('project_links')
@@ -277,8 +295,17 @@ router.delete(
       const { id } = req.params;
       const userId = req.userId;
 
+      // Check if Supabase admin client is available
+      if (!supabaseAdmin) {
+        console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+        return res.status(500).json({
+          error: 'Internal Server Error',
+          message: 'Database connection not available',
+        });
+      }
+
       // Fetch the existing project to verify ownership and get idea_id
-      const { data: existingProject, error: fetchError } = await supabase
+      const { data: existingProject, error: fetchError } = await supabaseAdmin
         .from('project_links')
         .select('user_id, idea_id')
         .eq('id', id)
@@ -358,8 +385,17 @@ router.delete(
  */
 router.get('/stats', async (_req: Request, res: Response) => {
   try {
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      return res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'Database connection not available',
+      });
+    }
+
     // Get total project count
-    const { count: totalProjects, error: countError } = await supabase
+    const { count: totalProjects, error: countError } = await supabaseAdmin
       .from('project_links')
       .select('*', { count: 'exact', head: true });
 
@@ -372,7 +408,7 @@ router.get('/stats', async (_req: Request, res: Response) => {
     }
 
     // Get all projects to analyze tools usage
-    const { data: allProjects, error: projectsError } = await supabase
+    const { data: allProjects, error: projectsError } = await supabaseAdmin
       .from('project_links')
       .select('tools_used, idea_id, ideas!project_links_idea_id_fkey(category)');
 

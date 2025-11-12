@@ -21,7 +21,7 @@ app.use(morgan('dev', {
   skip: (req) => req.url === '/health', // Skip health check spam
 }));
 // Add request logging middleware
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   console.log(`\n📥 BACKEND: ${req.method} ${req.url} - ${new Date().toISOString()}`);
   next();
 });

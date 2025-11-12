@@ -80,7 +80,7 @@ router.get(
     const sort = (req.query.sort as string) || 'recent';
     // Handle free_tier parameter - it can come as string 'true'/'false' or boolean
     const freeTierParam = req.query.free_tier;
-    const freeTierFilter = freeTierParam === 'true' || freeTierParam === true || freeTierParam === '1';
+    const freeTierFilter = freeTierParam === 'true' || freeTierParam === '1';
     const isAuthenticated = !!req.userId;
     
     // Debug logging - MORE VISIBLE
@@ -168,8 +168,8 @@ router.get(
         filteredIdeas = filteredIdeas.filter(idea =>
           idea.title.toLowerCase().includes(searchLower) ||
           idea.description?.toLowerCase().includes(searchLower) ||
-          idea.tools?.some(tool => tool.toLowerCase().includes(searchLower)) ||
-          idea.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+          idea.tools?.some((tool: string) => tool.toLowerCase().includes(searchLower)) ||
+          idea.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower))
         );
       }
       
@@ -332,7 +332,13 @@ router.get(
 router.get(
   '/free-tier',
   asyncHandler(async (_req: Request, res: Response) => {
-    const { data: ideas, error } = await supabase
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      throw new Error('Database connection not available');
+    }
+
+    const { data: ideas, error } = await supabaseAdmin
       .from('ideas')
       .select('*')
       .eq('free_tier', true)
@@ -421,8 +427,8 @@ router.get(
         filteredIdeas = filteredIdeas.filter(idea =>
           idea.title.toLowerCase().includes(searchLower) ||
           idea.description?.toLowerCase().includes(searchLower) ||
-          idea.tools?.some(tool => tool.toLowerCase().includes(searchLower)) ||
-          idea.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+          idea.tools?.some((tool: string) => tool.toLowerCase().includes(searchLower)) ||
+          idea.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower))
         );
       }
       
@@ -583,6 +589,12 @@ router.get(
 
     const { ideaId } = req.params;
 
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      throw new Error('Database connection not available');
+    }
+
     // Query project links with user display name via join
     const { data: projects, error } = await supabaseAdmin
       .from('project_links')
@@ -727,6 +739,12 @@ router.post(
 
     const ideaId = req.params.id;
 
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      throw new Error('Database connection not available');
+    }
+
     // First, check if idea exists
     const { data: existingIdea, error: fetchError } = await supabaseAdmin
       .from('ideas')
@@ -781,6 +799,12 @@ router.patch(
     }
 
     const ideaId = req.params.id;
+
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error('Backend: Supabase admin client not initialized. Check SUPABASE_SERVICE_ROLE_KEY.');
+      throw new Error('Database connection not available');
+    }
 
     // First, check if idea exists
     const { data: existingIdea, error: fetchError } = await supabaseAdmin

@@ -7,7 +7,7 @@ import { asyncHandler, badRequest, notFound, forbidden } from '../utils/errors.j
 const router = express.Router();
 
 // Log all requests to comments router for debugging
-router.use((req, res, next) => {
+router.use((req, _res, next) => {
   console.log(`📝 COMMENTS ROUTER: ${req.method} ${req.path}`);
   next();
 });
