@@ -8,6 +8,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from './components/ui/toaster';
 import { AppRouter } from './router';
+import { PasswordGate } from './components/PasswordGate';
 
 const rootElement = document.getElementById('root');
 
@@ -51,14 +52,16 @@ function LoadingFallback() {
 function AppWrapper() {
   return (
     <QueryClientProvider client={queryClient} contextSharing={true}>
-      <Suspense fallback={<LoadingFallback />}>
-        <ThemeProvider>
-          <AuthProvider>
-            <AppRouter />
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
-      </Suspense>
+      <PasswordGate>
+        <Suspense fallback={<LoadingFallback />}>
+          <ThemeProvider>
+            <AuthProvider>
+              <AppRouter />
+              <Toaster />
+            </AuthProvider>
+          </ThemeProvider>
+        </Suspense>
+      </PasswordGate>
     </QueryClientProvider>
   );
 }
