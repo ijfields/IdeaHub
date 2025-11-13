@@ -479,6 +479,66 @@
 
 ---
 
+## Milestone: Production Deployment (Week 5) ✅
+
+### Deployment Completed (November 13, 2025)
+- [x] Fixed all 27 TypeScript build errors in backend
+- [x] Configured Vercel serverless function routing
+- [x] Deployed backend to production: https://idea-hub-backend.vercel.app
+- [x] Deployed frontend to production: https://idea-hub-frontend-plum.vercel.app
+- [x] Configured environment variables for both projects
+- [x] Tested authentication, ideas browsing, and core features
+- [x] Verified backend health check endpoint
+- [ ] Enable Vercel password protection (IN PROGRESS)
+- [ ] Send to small beta group for testing
+
+**Production URLs:**
+- Frontend: https://idea-hub-frontend-plum.vercel.app
+- Backend: https://idea-hub-backend.vercel.app
+
+---
+
+## Backlog / Future Enhancements
+
+### High Priority (Before Public Launch)
+- [ ] **CI/CD with Automated Testing**
+  - Set up GitHub Actions workflow
+  - Run Playwright tests on every PR
+  - Block merges if tests fail
+  - Add deployment health checks
+  - See: Session backlog item
+
+- [ ] **Email Server Setup**
+  - Integrate Resend for professional emails
+  - Configure custom SMTP in Supabase
+  - Customize email templates
+  - See: `docs/enhancements/email-server-setup.md`
+
+- [ ] **Fix Playwright Tests**
+  - Update tests to work with deployed app
+  - Add test data seeding
+  - Configure test environment variables
+
+### Medium Priority (Post-Launch Improvements)
+- [ ] **GitHub Issues Integration**
+  - See: `docs/enhancements/github-issues-integration.md`
+
+- [ ] **Hexagonal Home Redesign**
+  - See: `docs/enhancements/hexagonal-home-redesign.md`
+
+- [ ] **Update BuyButton to MyServices**
+  - See: `docs/enhancements/update-buybutton-to-myservices.md`
+
+### Low Priority (Long-term)
+- [ ] Custom domain setup
+- [ ] Analytics integration (Vercel Analytics or Google Analytics)
+- [ ] SEO optimization
+- [ ] Performance optimization (code splitting, lazy loading)
+- [ ] Accessibility audit and improvements
+- [ ] Mobile app (React Native)
+
+---
+
 ## Notes
 
 - Tasks marked with `[ ]` are pending
@@ -488,4 +548,4 @@
 - Focus on MVP features first (Weeks 1-4) before enhancements
 
 **Target Timeline:** 6 weeks to closed beta launch
-**Last Updated:** 2025-11-06
+**Last Updated:** 2025-11-13
