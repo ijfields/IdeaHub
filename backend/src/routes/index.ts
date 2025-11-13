@@ -39,6 +39,7 @@ import projectsRouter from './projects.js';
 import commentsRouter from './comments.js';
 import metricsRouter from './metrics.js';
 import ideasRouter from './ideas.js';
+import betaRequestsRouter from './beta-requests.js';
 
 // Future route imports will go here
 // import authRouter from './auth.js';
@@ -51,6 +52,7 @@ router.use('/ideas', ideasRouter); // Main ideas routes (includes /ideas/:ideaId
 router.use('/metrics', metricsRouter);
 // Alias /analytics to /metrics for frontend compatibility
 router.use('/analytics', metricsRouter);
+router.use('/beta-requests', betaRequestsRouter);
 
 // Future route mounting will go here
 // router.use('/auth', authRouter);
