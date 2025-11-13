@@ -135,10 +135,10 @@ export function BetaRequestForm({ trigger }: BetaRequestFormProps) {
                 required
                 disabled={loading}
               >
-                <SelectTrigger id="referral">
+                <SelectTrigger id="referral" className="bg-white">
                   <SelectValue placeholder="Select an option" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   {referralSources.map((source) => (
                     <SelectItem key={source} value={source}>
                       {source}
@@ -176,7 +176,11 @@ export function BetaRequestForm({ trigger }: BetaRequestFormProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading} className="flex-1">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+              >
                 {loading ? 'Submitting...' : 'Submit Request'}
               </Button>
             </div>
