@@ -3,6 +3,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { BetaRequestForm } from './BetaRequestForm';
 
 const STORAGE_KEY = 'ideahub_beta_access';
 
@@ -97,13 +98,7 @@ export function PasswordGate({ children }: PasswordGateProps) {
                 This is a closed beta. You need an access password to continue.
               </p>
               <p className="text-xs text-gray-500">
-                Don't have access?{' '}
-                <a
-                  href="mailto:beta@ideahub.example.com"
-                  className="text-indigo-600 hover:text-indigo-700 font-medium"
-                >
-                  Request an invitation
-                </a>
+                Don't have access? <BetaRequestForm />
               </p>
             </div>
           </form>
