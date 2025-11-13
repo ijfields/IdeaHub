@@ -306,6 +306,173 @@ Refer to this document for:
 
 ---
 
+### Session 2: Styling Fixes & React 18 Downgrade (November 2025)
+
+**Branch:** `downgrade-react-18`  
+**Focus:** Fix Tailwind CSS v4 configuration, resolve React Query errors, restore professional styling
+
+**Problems Solved:**
+
+1. **Tailwind CSS v4 Configuration**
+   - Fixed CSS compilation by updating from old v3 syntax (`@tailwind base;`) to v4 syntax (`@import "tailwindcss";`)
+   - This was causing all styles to fail to compile, resulting in unstyled HTML
+
+2. **React Query API Client Errors**
+   - Fixed `TypeError: Cannot read properties of undefined (reading 'client')`
+   - Root cause: Methods destructured from class instance lost `this` context
+   - Solution: Used `.call(apiClientInstance, ...)` to explicitly bind `this` for all exported wrapper functions
+
+3. **React 19 Compatibility Issues**
+   - Downgraded React and React DOM from 19.1.1 to 18.3.1
+   - React Query v5 works better with React 18.x
+   - Resolved context provider and error boundary issues
+
+4. **Radix UI Select Component**
+   - Fixed error: `Select.Item` cannot have empty string value
+   - Changed `value=""` to `value="all"` and updated all filter logic
+
+5. **Accessibility Warnings**
+   - Added `SheetDescription` component to fix Radix UI accessibility warnings
+
+**Key Changes:**
+- Updated `frontend/src/index.css` to Tailwind v4 syntax
+- Fixed API client method binding in `frontend/src/lib/api-client.ts`
+- Updated all gradient buttons to use `.btn-gradient-link` CSS class
+- Created `/theme-test` static page for styling verification
+- Fixed Select component in IdeasList page
+
+**Files Modified:** 15+ files  
+**New Files:** ThemeTest.tsx, SESSION_SUMMARY_STYLING_FIXES.md  
+**Status:** ✅ Styling working, ready for testing
+
+**Key Learnings:**
+- Tailwind CSS v4 uses `@import "tailwindcss";` not `@tailwind` directives
+- React 18 is more stable with React Query v5 than React 19
+- Method binding requires explicit `.call()` when exporting wrapper functions
+- Static test pages help isolate styling from API issues
+
+---
+
+### Session 3: Authentication & Account Issues Fixes (November 2025)
+
+**Branch:** `downgrade-react-18`  
+**Focus:** Fix authentication hanging, logout issues, blank cards, comment submission, and markdown rendering
+
+**Problems Solved:**
+
+1. **Login Hanging After Successful Authentication**
+   - Added 5-second timeout to `fetchProfile` function
+   - Ensured `setLoading(false)` always completes, even if profile fetch fails/hangs
+   - Added proper error handling with `.catch()` and `.finally()` blocks
+
+2. **Logout Not Working**
+   - Clear local state FIRST before attempting Supabase signOut
+   - Added 3-second timeout to signOut operation
+   - Ensured UI updates immediately even if Supabase call hangs
+
+3. **Blank Cards on Profile/Settings/Dashboard Pages**
+   - Profile page: Allow rendering even if `profile` is null, use `user.email` as fallback
+   - Settings/Dashboard: Check `authLoading` state and show appropriate loading/error states
+   - Added fallback values for all profile-dependent fields
+
+4. **Comments Showing "Anonymous"**
+   - Updated backend GET comments route to return `user: { display_name, email }` structure
+   - Added fallback fetch for user data if join doesn't return it
+   - Fixed optimistic update in `useCreateComment` to use actual user data
+
+5. **Comment Update Failing**
+   - Added `PUT /api/comments/:id` route matching frontend expectations
+   - Added same user data fetching logic as create route
+   - Added extensive logging for debugging
+
+6. **Markdown Not Rendering**
+   - Removed "Markdown is supported" text (users won't know markdown)
+   - Plan to add rich text editor in future instead of markdown
+
+7. **Comments Appearing in Edit Mode Automatically**
+   - Added `useEffect` to clear edit state if comment being edited no longer exists
+   - Improved edit state management to prevent stale state
+
+**Key Changes:**
+- Backend: Updated comment routes to return consistent user data structure, added PUT route
+- Frontend: Added timeouts to all async auth operations, improved error handling, added fallback rendering
+- Files Modified: 20+ files across backend and frontend
+
+**Key Learnings:**
+- Always add timeouts to async operations to prevent UI hanging
+- Clear local state before server calls (especially logout)
+- Use fallback values so pages render even if optional data fails to load
+- Match API data structures between backend and frontend
+- Handle loading states properly before rendering protected content
+- Use `supabaseAdmin` for backend operations to bypass RLS
+
+**Documentation Created:**
+- `docs/SESSION_SUMMARY_AUTH_FIXES.md` - Detailed session summary
+- `docs/AUTH_ACCOUNT_RULES.md` - Rules and patterns to prevent auth/account issues
+
+**Status:** ✅ All critical auth/account issues resolved, ready for testing
+
+---
+
+### Session 4: Backend API Routes & Profile Page Fixes (November 12, 2025)
+
+**Branch:** `downgrade-react-18`  
+**Focus:** Fix backend API route errors, logout auto-login issue, empty profile pages, and UI standardization
+
+**Problems Solved:**
+
+1. **Backend API Route Errors**
+   - Fixed GET `/api/ideas/:ideaId/projects` 404 error (moved route to ideas router, placed before `/:id`)
+   - Fixed POST `/api/projects` 500 error (changed to use `supabaseAdmin` for RLS bypass)
+   - Added POST `/api/ideas/:id/view` route for view count increment
+   - Added `/analytics` alias to `/metrics` router for frontend compatibility
+   - Added `/pageview` route alias in addition to `/page-view`
+
+2. **Logout Auto-Login Issue**
+   - Fixed users being automatically logged back in after logout
+   - Root cause: State cleared before Supabase signOut, session remained in localStorage
+   - Solution: Sign out from Supabase FIRST, then clear state and manually clear localStorage
+
+3. **Empty Profile Pages**
+   - Fixed Profile, Dashboard, and Settings pages showing empty cards
+   - Added proper user existence checks before rendering
+   - Improved fallback values (displayName defaults to 'User' if email missing)
+   - Better error handling for missing profile data
+   - Pages now render content even when profile is null
+
+4. **UI/UX Standardization**
+   - Standardized button styling with `btn-gradient` class on Sign In, Create Account, Submit Project buttons
+   - Fixed dialog overlay transparency (solid background for forms)
+   - Improved form spacing in project submission dialog
+
+5. **Project URL Validation**
+   - Added validation to prevent localhost project URLs from opening
+   - Shows error message for invalid localhost URLs instead of broken links
+
+6. **API Client Fixes**
+   - Fixed `createProject` endpoint to use correct `/projects` route with `idea_id` in body
+   - Updated backend default port to 3000 (was 3001)
+
+**Key Changes:**
+- Backend: Updated all projects router queries to use `supabaseAdmin`, fixed route mounting
+- Frontend: Improved auth context signOut logic, added localStorage clearing, improved profile page rendering
+- Files Modified: 15+ files across backend and frontend
+
+**Documentation Created:**
+- `docs/BUGFIXES.md` - Comprehensive bug fixes tracking log
+- Updated `docs/testing on downgrade-react-18.md` with fixed issues
+
+**Key Learnings:**
+- Always use `supabaseAdmin` for backend operations to bypass RLS
+- Sign out from Supabase before clearing local state to prevent session restoration
+- Manually clear localStorage session keys to prevent auto-login
+- Place more specific routes before less specific ones in Express (e.g., `/:ideaId/projects` before `/:id`)
+- Ensure pages render content even when optional data (like profile) is missing
+
+**Status:** ✅ All API routes working, logout fixed, profile pages rendering correctly
+
+---
+
 ## Tips for Future Sessions
 
 ### Using Subagent Orchestration
@@ -333,4 +500,13 @@ When working on complex tasks:
 - Consolidated file at `/supabase/all-migrations.sql`
 - Run via Supabase Dashboard SQL Editor
 - Test queries to verify after migration
+
+### Authentication & Account Management
+- **Always read `docs/AUTH_ACCOUNT_RULES.md` before working on auth/account features**
+- Never block UI on async operations - always add timeouts
+- Clear local state before server calls (especially logout)
+- Use fallback values so pages render even if optional data fails
+- Match API data structures between backend and frontend
+- Handle loading states properly before rendering protected content
+- Use `supabaseAdmin` for backend operations to bypass RLS
 

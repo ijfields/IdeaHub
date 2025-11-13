@@ -13,16 +13,17 @@ import type { Database } from '../types/database';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Validate required environment variables
-if (!supabaseUrl) {
-  throw new Error(
-    'Missing VITE_SUPABASE_URL environment variable. Please check your .env file.'
+// Validate required environment variables (only in production)
+// In development, allow missing vars to prevent crashes
+if (!supabaseUrl && import.meta.env.PROD) {
+  console.warn(
+    'Missing VITE_SUPABASE_URL environment variable. Some features may not work.'
   );
 }
 
-if (!supabaseAnonKey) {
-  throw new Error(
-    'Missing VITE_SUPABASE_ANON_KEY environment variable. Please check your .env file.'
+if (!supabaseAnonKey && import.meta.env.PROD) {
+  console.warn(
+    'Missing VITE_SUPABASE_ANON_KEY environment variable. Some features may not work.'
   );
 }
 
@@ -44,15 +45,64 @@ if (!supabaseAnonKey) {
  *   .eq('free_tier', true);
  * ```
  */
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    // Store session in localStorage for persistence across page reloads
-    storage: window.localStorage,
-    // Automatically refresh tokens before they expire
-    autoRefreshToken: true,
-    // Persist session to localStorage
-    persistSession: true,
-    // Detect session from URL (useful for email confirmation links)
-    detectSessionInUrl: true,
-  },
-});
+// Create Supabase client with fallback values if env vars are missing
+export const supabase = createClient<Database>(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      // Store session in localStorage for persistence across page reloads
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      // Automatically refresh tokens before they expire
+      autoRefreshToken: true,
+      // Persist session to localStorage
+      persistSession: true,
+      // Detect session from URL (useful for email confirmation links)
+      detectSessionInUrl: true,
+      // Add flow type to prevent hanging
+      flowType: 'pkce',
+    },
+    global: {
+      // Add fetch options to help with timeout issues
+      fetch: (url, options = {}) => {
+        console.log('🔵 SUPABASE: Making request to:', url);
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.error('🔴 SUPABASE: Request timeout after 10 seconds');
+          controller.abort();
+        }, 10000);
+        
+        // Merge abort signal with existing signal if present
+        const signal = options.signal 
+          ? (() => {
+              const mergedController = new AbortController();
+              options.signal.addEventListener('abort', () => mergedController.abort());
+              controller.signal.addEventListener('abort', () => mergedController.abort());
+              return mergedController.signal;
+            })()
+          : controller.signal;
+        
+        return fetch(url, {
+          ...options,
+          signal,
+        })
+        .then((response) => {
+          clearTimeout(timeoutId);
+          console.log('🟢 SUPABASE: Request completed:', response.status);
+          return response;
+        })
+        .catch((error) => {
+          clearTimeout(timeoutId);
+          if (error.name === 'AbortError') {
+            console.error('🔴 SUPABASE: Request aborted (timeout)');
+          } else {
+            console.error('🔴 SUPABASE: Fetch error:', error);
+          }
+          throw error;
+        });
+      },
+    },
+  }
+);

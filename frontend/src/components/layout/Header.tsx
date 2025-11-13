@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Search, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
+import { Menu, Search, User, LogOut, Settings, LayoutDashboard, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,21 +19,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-
-// TODO: Replace with actual auth context
-const useAuth = () => {
-  // Mock auth state - replace with real auth context
-  return {
-    user: null, // { id: '1', email: 'user@example.com', displayName: 'John Doe' }
-    isAuthenticated: false,
-    logout: () => console.log('Logout'),
-  };
-};
+import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 
 export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  const isAuthenticated = !!user;
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,15 +50,30 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm transition-all duration-300">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-white font-bold text-lg">
+          <Link to="/" className="flex items-center space-x-2 group">
+            <div 
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white font-bold text-lg shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              }}
+            >
               AI
             </div>
-            <span className="hidden font-bold text-xl sm:inline-block">AI Ideas Hub</span>
+            <span 
+              className="hidden font-bold text-xl sm:inline-block"
+              style={{
+                background: 'linear-gradient(to right, #2563eb, #60a5fa)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              AI Ideas Hub
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -73,7 +82,7 @@ export function Header() {
               <Link
                 key={link.path}
                 to={link.path}
-                className="transition-colors hover:text-primary-600 text-foreground/80"
+                className="transition-all duration-300 hover:text-primary-600 text-foreground/80 hover:scale-105"
               >
                 {link.name}
               </Link>
@@ -97,6 +106,21 @@ export function Header() {
 
         {/* Right side actions */}
         <div className="flex items-center gap-3">
+          {/* Dark Mode Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="transition-all duration-200"
+            aria-label="Toggle theme"
+          >
+            {resolvedTheme === 'dark' ? (
+              <Sun className="h-5 w-5 transition-transform hover:rotate-90" />
+            ) : (
+              <Moon className="h-5 w-5 transition-transform hover:-rotate-12" />
+            )}
+          </Button>
+
           {/* Mobile Search Toggle */}
           <Button
             variant="ghost"
@@ -112,11 +136,11 @@ export function Header() {
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.avatar} alt={user?.displayName || 'User'} />
+                    <AvatarImage src={profile?.avatar || undefined} alt={profile?.display_name || 'User'} />
                     <AvatarFallback>
-                      {user?.displayName ? getUserInitials(user.displayName) : <User className="h-5 w-5" />}
+                      {profile?.display_name ? getUserInitials(profile.display_name) : <User className="h-5 w-5" />}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -124,7 +148,7 @@ export function Header() {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.displayName || 'User'}</p>
+                    <p className="text-sm font-medium leading-none">{profile?.display_name || user?.email || 'User'}</p>
                     <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                   </div>
                 </DropdownMenuLabel>
@@ -148,10 +172,24 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="flex items-center text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          await signOut();
+                          window.location.href = '/';
+                        } catch (error) {
+                          console.error('Logout error:', error);
+                          // Force redirect even if signOut fails
+                          window.location.href = '/';
+                        }
+                      }} 
+                      className="flex items-center text-destructive cursor-pointer"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
@@ -208,13 +246,13 @@ export function Header() {
                   <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
                     <div className="flex items-center gap-3 px-3 py-2">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={user?.avatar} alt={user?.displayName || 'User'} />
+                        <AvatarImage src={profile?.avatar || undefined} alt={profile?.display_name || 'User'} />
                         <AvatarFallback>
-                          {user?.displayName ? getUserInitials(user.displayName) : <User className="h-5 w-5" />}
+                          {profile?.display_name ? getUserInitials(profile.display_name) : <User className="h-5 w-5" />}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">{user?.displayName || 'User'}</span>
+                        <span className="text-sm font-medium">{profile?.display_name || user?.email || 'User'}</span>
                         <span className="text-xs text-muted-foreground">{user?.email}</span>
                       </div>
                     </div>
@@ -230,14 +268,24 @@ export function Header() {
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </Link>
-                    <Button
-                      variant="ghost"
-                      onClick={logout}
-                      className="justify-start text-destructive hover:text-destructive"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            try {
+                              await signOut();
+                              window.location.href = '/';
+                            } catch (error) {
+                              console.error('Logout error:', error);
+                              // Force redirect even if signOut fails
+                              window.location.href = '/';
+                            }
+                          }}
+                          className="justify-start text-destructive hover:text-destructive w-full"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Log out
+                        </Button>
                   </div>
                 )}
               </div>

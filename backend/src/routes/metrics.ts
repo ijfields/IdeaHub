@@ -11,6 +11,38 @@ const router = express.Router();
 const pageViewLimiter = createRateLimiter(100, 60 * 60 * 1000);
 
 /**
+ * Handler for page view tracking (shared between /page-view and /pageview routes)
+ */
+const pageViewHandler = asyncHandler(async (req: Request, res: Response) => {
+  // Validate request body
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    throw badRequest('Validation failed: ' + errors.array().map(e => e.msg).join(', '));
+  }
+
+  const { page, idea_id } = req.body;
+  const user_id = req.userId || null; // null for guests
+
+  // Insert page view record
+  const { error } = await supabase.from('page_views').insert({
+    user_id,
+    page,
+    idea_id: idea_id || null,
+    timestamp: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error('Error inserting page view:', error);
+    throw internalError('Failed to record page view');
+  }
+
+  res.status(201).json({
+    success: true,
+    message: 'Page view recorded',
+  });
+});
+
+/**
  * POST /api/metrics/page-view
  * Track page views (including guest users)
  * Uses optionalAuth to track authenticated users while allowing guests
@@ -23,34 +55,23 @@ router.post(
     body('page').isString().notEmpty().withMessage('Page is required'),
     body('idea_id').optional().isUUID().withMessage('Invalid idea_id format'),
   ],
-  asyncHandler(async (req: Request, res: Response) => {
-    // Validate request body
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      throw badRequest('Validation failed: ' + errors.array().map(e => e.msg).join(', '));
-    }
+  pageViewHandler
+);
 
-    const { page, idea_id } = req.body;
-    const user_id = req.userId || null; // null for guests
-
-    // Insert page view record
-    const { error } = await supabase.from('page_views').insert({
-      user_id,
-      page,
-      idea_id: idea_id || null,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (error) {
-      console.error('Error inserting page view:', error);
-      throw internalError('Failed to record page view');
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Page view recorded',
-    });
-  })
+/**
+ * POST /api/metrics/pageview (alias for /page-view)
+ * Track page views (including guest users)
+ * Frontend compatibility route
+ */
+router.post(
+  '/pageview',
+  pageViewLimiter,
+  optionalAuth,
+  [
+    body('page').isString().notEmpty().withMessage('Page is required'),
+    body('idea_id').optional().isUUID().withMessage('Invalid idea_id format'),
+  ],
+  pageViewHandler
 );
 
 /**

@@ -21,6 +21,8 @@ import { User as UserIcon, Mail, Calendar, Edit2, Save, X, Loader2 } from 'lucid
 
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useIdeas } from '@/hooks/useIdeas';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -81,6 +83,10 @@ export default function Profile() {
     commentsCount: 0,
   });
 
+  // Fetch total ideas count for authenticated users
+  const { data: ideasData } = useIdeas({ limit: 1 }, { retry: false });
+  const allIdeasCount = ideasData?.pagination?.total || 87; // Fallback to 87 if not available
+
   const {
     register,
     handleSubmit,
@@ -92,10 +98,11 @@ export default function Profile() {
 
   /**
    * Redirect to login if not authenticated
+   * ProtectedRoute handles this, but we keep this as a safety check
    */
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -103,17 +110,19 @@ export default function Profile() {
    * Load user profile data and stats
    */
   useEffect(() => {
-    if (profile) {
-      // Reset form with current profile data
+    if (user) {
+      // Reset form with current profile data (use profile if available, otherwise user email)
       reset({
-        displayName: profile.display_name || '',
-        bio: profile.bio || '',
+        displayName: profile?.display_name || user.email || '',
+        bio: profile?.bio || '',
       });
 
-      // Fetch user statistics
-      fetchUserStats();
+      // Fetch user statistics if we have a user
+      if (user.id) {
+        fetchUserStats();
+      }
     }
-  }, [profile, reset]);
+  }, [profile, user, reset]);
 
   /**
    * Fetch user statistics (projects and comments count)
@@ -146,6 +155,11 @@ export default function Profile() {
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
+      // Set default stats on error
+      setUserStats({
+        projectsCount: 0,
+        commentsCount: 0,
+      });
     } finally {
       setIsLoadingStats(false);
     }
@@ -157,20 +171,42 @@ export default function Profile() {
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user) return;
 
+    console.log('🔵 PROFILE: Starting profile update...');
+    console.log('🔵 PROFILE: Data to update:', { displayName: data.displayName, bio: data.bio });
+
     try {
-      const { error } = await supabase
+      console.log('🔵 PROFILE: Calling supabase.from("users").update()...');
+      
+      const { error, data: updateData } = await supabase
         .from('users')
         .update({
           display_name: data.displayName,
           bio: data.bio || null,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('🔴 PROFILE: Update error:', error);
+        throw error;
+      }
 
-      // Refresh profile data
-      await refreshProfile();
+      console.log('🟢 PROFILE: Update successful, refreshing profile...');
+
+      // Refresh profile data (with timeout protection)
+      try {
+        await Promise.race([
+          refreshProfile(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile refresh timeout')), 5000)
+          )
+        ]);
+        console.log('🟢 PROFILE: Profile refreshed successfully');
+      } catch (refreshError) {
+        console.warn('🔴 PROFILE: Profile refresh failed or timed out:', refreshError);
+        // Continue anyway - the update was successful
+      }
 
       // Show success toast
       toast({
@@ -180,10 +216,13 @@ export default function Profile() {
 
       // Exit edit mode
       setIsEditing(false);
+      console.log('🟢 PROFILE: Update complete');
     } catch (error: any) {
+      console.error('🔴 PROFILE: Update failed:', error);
       toast({
         title: 'Update Failed',
         description: error.message || 'Failed to update profile. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -201,23 +240,32 @@ export default function Profile() {
 
   /**
    * Get user initials for avatar
+   * Returns 2 characters when possible (first + last initial)
+   * Falls back to first 2 characters of name/email if only one word
    */
   const getUserInitials = () => {
-    const name = profile?.display_name || profile?.email || 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    const name = profile?.display_name || user?.email || 'U';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    
+    if (parts.length >= 2) {
+      // First and last name - use first letter of each
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase().slice(0, 2);
+    } else if (parts.length === 1 && parts[0].length >= 2) {
+      // Single word with 2+ characters - use first 2 letters
+      return parts[0].substring(0, 2).toUpperCase();
+    } else {
+      // Single character or fallback
+      return name.substring(0, 2).toUpperCase() || 'U';
+    }
   };
 
   /**
-   * Loading skeleton
+   * Loading skeleton - only show during initial auth check
+   * Allow rendering even if profile is null (will use user.email as fallback)
    */
-  if (authLoading || !profile) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
+      <MainLayout>
         <div className="max-w-4xl mx-auto pt-12">
           <Card>
             <CardHeader>
@@ -236,12 +284,26 @@ export default function Profile() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
+  // Redirect if not authenticated (ProtectedRoute should handle this, but double-check)
+  if (!authLoading && !user) {
+    return null; // ProtectedRoute will handle redirect
+  }
+
+  // Ensure user exists (should be guaranteed by ProtectedRoute)
+  if (!user) {
+    return null;
+  }
+
+  // If no profile but user exists, use user email as fallback
+  const displayName = profile?.display_name || user?.email || 'User';
+  const bio = profile?.bio || '';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
+    <MainLayout>
       <div className="max-w-4xl mx-auto pt-12">
         <Card>
           <CardHeader>
@@ -257,6 +319,7 @@ export default function Profile() {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditing(true)}
+                  className="hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   <Edit2 className="h-4 w-4 mr-2" />
                   Edit Profile
@@ -276,9 +339,9 @@ export default function Profile() {
                 <div className="flex-1 space-y-4">
                   {/* Display Name */}
                   <div className="space-y-2">
-                    <Label htmlFor="displayName" className="flex items-center gap-2">
+                    <Label htmlFor="displayName" className="flex items-center gap-2 text-sm font-medium">
                       <UserIcon className="h-4 w-4" />
-                      Display Name
+                      <span>Display Name</span>
                     </Label>
                     {isEditing ? (
                       <>
@@ -296,30 +359,36 @@ export default function Profile() {
                       </>
                     ) : (
                       <p className="text-lg font-medium">
-                        {profile.display_name || 'No name set'}
+                        {displayName || 'No name set'}
                       </p>
                     )}
                   </div>
 
                   {/* Email (non-editable) */}
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
+                    <Label className="flex items-center gap-2 text-sm font-medium">
                       <Mail className="h-4 w-4" />
-                      Email
+                      <span>Email</span>
                     </Label>
-                    <p className="text-sm text-muted-foreground">{profile.email}</p>
+                    <p className="text-sm text-muted-foreground">{user?.email || 'Email not available'}</p>
                   </div>
 
                   {/* Join Date */}
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
+                    <Label className="flex items-center gap-2 text-sm font-medium">
                       <Calendar className="h-4 w-4" />
-                      Member Since
+                      <span>Member Since</span>
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(profile.created_at), {
-                        addSuffix: true,
-                      })}
+                      {profile?.created_at 
+                        ? formatDistanceToNow(new Date(profile.created_at), {
+                            addSuffix: true,
+                          })
+                        : user?.created_at
+                        ? formatDistanceToNow(new Date(user.created_at), {
+                            addSuffix: true,
+                          })
+                        : 'Unknown'}
                     </p>
                   </div>
                 </div>
@@ -345,7 +414,7 @@ export default function Profile() {
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {profile.bio || 'No bio added yet'}
+                    {bio || 'No bio added yet'}
                   </p>
                 )}
               </div>
@@ -390,13 +459,16 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Tier Badge */}
+              {/* Account Status Badge */}
               <div className="space-y-2">
-                <Label>Account Tier</Label>
+                <Label>Account Status</Label>
                 <div>
                   <Badge variant="secondary" className="text-sm">
-                    {profile.tier === 'free' ? 'Free' : 'Premium'} Member
+                    Registered Member
                   </Badge>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Full access to all {allIdeasCount || 87} project ideas
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -409,11 +481,16 @@ export default function Profile() {
                   variant="outline"
                   onClick={handleCancelEdit}
                   disabled={isSubmitting}
+                  className="hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="hover:bg-primary/90 transition-colors"
+                >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -431,6 +508,6 @@ export default function Profile() {
           </form>
         </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 }

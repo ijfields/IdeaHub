@@ -21,4 +21,11 @@ export const supabaseAdmin: SupabaseClient | null = supabaseServiceRoleKey
   ? createClient(supabaseUrl, supabaseServiceRoleKey)
   : null;
 
+// Log initialization status
+if (!supabaseAdmin) {
+  console.warn('Warning: Supabase admin client not initialized. SUPABASE_SERVICE_ROLE_KEY is missing.');
+} else {
+  console.log('Supabase admin client initialized successfully.');
+}
+
 export default supabase;

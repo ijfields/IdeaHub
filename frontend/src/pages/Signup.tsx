@@ -136,6 +136,11 @@ export default function Signup() {
           <CardDescription className="text-center">
             Join IdeaHub and unlock all 87 AI project ideas
           </CardDescription>
+          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+            <p className="text-xs text-blue-800 dark:text-blue-200 text-center">
+              📧 You'll receive an email to activate your account. Please check your inbox.
+            </p>
+          </div>
         </CardHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -284,7 +289,7 @@ export default function Signup() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full"
+              className="w-full btn-gradient"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

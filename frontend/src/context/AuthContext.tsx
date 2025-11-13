@@ -82,9 +82,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Fetch user profile from the users table
+   * Includes timeout to prevent hanging
    */
   const fetchProfile = async (userId: string): Promise<User | null> => {
+    console.log('🔵 AUTH: Fetching profile for user:', userId);
     try {
+      // Supabase client already has timeout handling via custom fetch wrapper (10 seconds)
+      // Just make the request - timeout is handled globally
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -92,13 +96,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        // Don't log timeout/abort errors as errors - they're expected in some cases
+        if (error.message?.includes('aborted') || error.message?.includes('timeout') || error.message?.includes('fetch')) {
+          console.warn('🟡 AUTH: Profile fetch timed out or failed, continuing without profile');
+        } else {
+          console.error('🔴 AUTH: Error fetching user profile:', error);
+        }
         return null;
       }
 
+      console.log('🟢 AUTH: Profile fetched successfully');
       return data;
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
+    } catch (error: any) {
+      // Handle errors gracefully - don't block the app
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted') || error?.message?.includes('timeout')) {
+        console.warn('🟡 AUTH: Profile fetch aborted/timed out, continuing without profile');
+      } else {
+        console.error('🔴 AUTH: Exception fetching user profile:', error?.message || error);
+      }
+      // Return null on timeout or error - don't block the app
       return null;
     }
   };
@@ -107,9 +123,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Refresh the user profile from the database
    */
   const refreshProfile = async () => {
-    if (user) {
+    if (!user) {
+      console.warn('🔴 AUTH: refreshProfile called but no user');
+      return;
+    }
+    
+    console.log('🔵 AUTH: Refreshing profile for user:', user.id);
+    try {
       const userProfile = await fetchProfile(user.id);
+      console.log('🟢 AUTH: Profile refreshed:', !!userProfile);
       setProfile(userProfile);
+    } catch (error) {
+      console.error('🔴 AUTH: Error refreshing profile:', error);
+      throw error;
     }
   };
 
@@ -124,13 +150,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Fetch user profile if session exists
       if (session?.user) {
-        fetchProfile(session.user.id).then((userProfile) => {
-          setProfile(userProfile);
-          setLoading(false);
-        });
+        fetchProfile(session.user.id)
+          .then((userProfile) => {
+            setProfile(userProfile);
+          })
+          .catch((error) => {
+            console.error('🔴 AUTH: Error in profile fetch promise:', error);
+            // Set profile to null on error, but don't block loading
+            setProfile(null);
+          })
+          .finally(() => {
+            // Always set loading to false, even if profile fetch fails or hangs
+            setLoading(false);
+          });
       } else {
         setLoading(false);
       }
+    }).catch((error) => {
+      console.error('🔴 AUTH: Error getting initial session:', error);
+      setLoading(false);
     });
 
     // Listen for auth state changes
@@ -142,8 +180,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Fetch or clear profile based on session
       if (session?.user) {
-        const userProfile = await fetchProfile(session.user.id);
-        setProfile(userProfile);
+        try {
+          const userProfile = await fetchProfile(session.user.id);
+          setProfile(userProfile);
+        } catch (error) {
+          console.error('🔴 AUTH: Error fetching profile in auth state change:', error);
+          setProfile(null);
+        }
       } else {
         setProfile(null);
       }
@@ -159,15 +202,60 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Sign in with email and password
    */
   const signIn = async (email: string, password: string) => {
+    console.log('🔵 AUTH: Starting sign in...');
+    
+    // Check if Supabase is properly configured
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const hasValidSupabase = supabaseUrl && 
+                             supabaseUrl !== 'https://placeholder.supabase.co';
+    
+    if (!hasValidSupabase) {
+      console.error('🔴 AUTH: Supabase not configured properly');
+      return { 
+        error: { 
+          message: 'Authentication service not configured. Please check your environment variables.',
+          name: 'AuthError',
+          status: 500,
+        } as AuthError 
+      };
+    }
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('🔵 AUTH: Calling supabase.auth.signInWithPassword...');
+      console.log('🔵 AUTH: Supabase URL:', supabaseUrl);
+      
+      // The fetch wrapper already has a 10-second timeout, so we don't need another timeout here
+      // Just call signInWithPassword directly - if it hangs, the fetch timeout will catch it
+      const result = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
-      return { error };
+      
+      if (result.error) {
+        console.error('🔴 AUTH: Sign in error:', result.error);
+        console.error('🔴 AUTH: Error details:', {
+          message: result.error.message,
+          name: result.error.name,
+          status: result.error.status,
+        });
+        return { error: result.error };
+      }
+      
+      console.log('🟢 AUTH: Sign in successful');
+      console.log('🟢 AUTH: User:', result.data.user?.email);
+      return { error: null };
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('🔴 AUTH: Sign in exception:', error);
+      // Check if it's a timeout error from the fetch wrapper
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { 
+          error: { 
+            message: 'Sign in request timed out. Please check your internet connection and try again.',
+            name: 'AuthTimeoutError',
+            status: 408,
+          } as AuthError 
+        };
+      }
       return { error: error as AuthError };
     }
   };
@@ -226,17 +314,65 @@ export function AuthProvider({ children }: AuthProviderProps) {
    */
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      console.log('🔵 AUTH: Starting sign out...');
+      
+      // Sign out from Supabase FIRST to clear the session
+      // Use a timeout to prevent hanging
+      const signOutPromise = supabase.auth.signOut();
+      const timeoutPromise = new Promise<{ error: AuthError }>((resolve) =>
+        setTimeout(() => resolve({ error: { message: 'Sign out timeout', name: 'TimeoutError', status: 408 } as AuthError }), 3000)
+      );
 
-      // Clear local state
+      const result = await Promise.race([signOutPromise, timeoutPromise]);
+      
+      // Clear local state AFTER sign out attempt (regardless of success/failure)
+      // This ensures the UI updates immediately and prevents auto-login
       setUser(null);
       setSession(null);
       setProfile(null);
 
-      return { error };
-    } catch (error) {
-      console.error('Sign out error:', error);
-      return { error: error as AuthError };
+      // Also manually clear localStorage session to prevent auto-login
+      if (typeof window !== 'undefined') {
+        // Clear all Supabase-related localStorage keys
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log('🔵 AUTH: Cleared localStorage keys:', keysToRemove.length);
+      }
+
+      if (result.error) {
+        console.error('🔴 AUTH: Sign out error:', result.error);
+        // State is already cleared, so return error but don't block
+        return { error: result.error };
+      }
+
+      console.log('🟢 AUTH: Sign out successful');
+      return { error: null };
+    } catch (error: any) {
+      console.error('🔴 AUTH: Sign out exception:', error?.message || error);
+      // Clear state even on exception
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      // Clear localStorage on exception too
+      if (typeof window !== 'undefined') {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      }
+      
+      return { error: { message: error?.message || 'Sign out failed', name: 'SignOutError' } as AuthError };
     }
   };
 
