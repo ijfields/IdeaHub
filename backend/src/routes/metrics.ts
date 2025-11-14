@@ -89,6 +89,7 @@ router.get(
         usersResult,
         projectsResult,
         commentsResult,
+        ideasResult,
         pageViewsResult,
         uniqueVisitorsResult,
         recentRegistrationsResult,
@@ -104,6 +105,9 @@ router.get(
 
         // Total comments
         supabase.from('comments').select('id', { count: 'exact', head: true }),
+
+        // Total ideas
+        supabase.from('ideas').select('id', { count: 'exact', head: true }),
 
         // Total page views
         supabase.from('page_views').select('id', { count: 'exact', head: true }),
@@ -143,6 +147,7 @@ router.get(
       if (usersResult.error) throw usersResult.error;
       if (projectsResult.error) throw projectsResult.error;
       if (commentsResult.error) throw commentsResult.error;
+      if (ideasResult.error) throw ideasResult.error;
       if (pageViewsResult.error) throw pageViewsResult.error;
       if (uniqueVisitorsResult.error) throw uniqueVisitorsResult.error;
       if (recentRegistrationsResult.error) throw recentRegistrationsResult.error;
@@ -170,6 +175,7 @@ router.get(
         total_registrations: usersResult.count || 0,
         total_projects: totalProjects,
         total_comments: commentsResult.count || 0,
+        total_ideas: ideasResult.count || 0,
         total_page_views: totalPageViews,
         unique_visitors: uniqueVisitors,
         projects_goal_progress: {
@@ -198,16 +204,22 @@ router.get(
 router.get(
   '/projects-goal',
   asyncHandler(async (_req: Request, res: Response) => {
-    const { count, error } = await supabase
-      .from('project_links')
-      .select('id', { count: 'exact', head: true });
+    const [projectsResult, ideasResult] = await Promise.all([
+      supabase.from('project_links').select('id', { count: 'exact', head: true }),
+      supabase.from('ideas').select('id', { count: 'exact', head: true }),
+    ]);
 
-    if (error) {
-      console.error('Error fetching projects count:', error);
+    if (projectsResult.error) {
+      console.error('Error fetching projects count:', projectsResult.error);
       throw internalError('Failed to fetch projects goal progress');
     }
 
-    const current = count || 0;
+    if (ideasResult.error) {
+      console.error('Error fetching ideas count:', ideasResult.error);
+      throw internalError('Failed to fetch ideas count');
+    }
+
+    const current = projectsResult.count || 0;
     const goal = 4000;
     const percentage = Math.round((current / goal) * 100 * 100) / 100;
 
@@ -215,6 +227,8 @@ router.get(
       current,
       goal,
       percentage,
+      total_projects: current,
+      total_ideas: ideasResult.count || 0,
       updated_at: new Date().toISOString(),
     });
   })
@@ -295,6 +309,7 @@ router.get(
         usersResult,
         projectsResult,
         commentsResult,
+        ideasResult,
         pageViewsResult,
         uniqueVisitorsResult,
         recentRegistrationsResult,
@@ -305,6 +320,7 @@ router.get(
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('project_links').select('id', { count: 'exact', head: true }),
         supabase.from('comments').select('id', { count: 'exact', head: true }),
+        supabase.from('ideas').select('id', { count: 'exact', head: true }),
         supabase.from('page_views').select('id', { count: 'exact', head: true }),
         supabase.from('page_views').select('user_id', { count: 'exact', head: false }),
         supabase
@@ -346,6 +362,7 @@ router.get(
         total_registrations: usersResult.count || 0,
         total_projects: totalProjects,
         total_comments: commentsResult.count || 0,
+        total_ideas: ideasResult.count || 0,
         total_page_views: totalPageViews,
         unique_visitors: uniqueVisitors,
         projects_goal: projectsGoal,
@@ -363,6 +380,7 @@ router.get(
         csv += `Total Registrations,${metrics.total_registrations}\n`;
         csv += `Total Projects,${metrics.total_projects}\n`;
         csv += `Total Comments,${metrics.total_comments}\n`;
+        csv += `Total Ideas,${metrics.total_ideas}\n`;
         csv += `Total Page Views,${metrics.total_page_views}\n`;
         csv += `Unique Visitors,${metrics.unique_visitors}\n`;
         csv += `Projects Goal,${metrics.projects_goal}\n`;

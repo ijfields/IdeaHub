@@ -17,6 +17,7 @@ interface DashboardMetrics {
 
 interface ProjectsGoalMetrics {
   total_projects: number;
+  total_ideas: number;
   campaign_goal: number;
   progress_percentage: number;
   days_remaining: number;
@@ -113,7 +114,7 @@ export function usePublicMetrics() {
       totalUsers: null, // Hidden for guests
       totalProjects: projectsGoal.data?.total_projects || 0,
       totalComments: null, // Hidden for guests
-      totalIdeas: 87, // Static for now (update when you add all 87 ideas)
+      totalIdeas: projectsGoal.data?.total_ideas || 0,
       visitsGoal: 4000, // Campaign goal is 4k VISITS (page views)
       visitsProgress: 0, // Guests can't see visit count
     },
