@@ -36,6 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIdeas } from '@/hooks/useIdeas';
+import { usePublicMetrics } from '@/hooks/useMetrics';
 
 // Categories list
 const categories = [
@@ -54,26 +55,45 @@ const categories = [
   { name: 'Think Tank & Research', icon: FlaskConical, count: 3 },
 ];
 
-// Placeholder stats
-const stats = [
-  { label: 'Registered Users', value: '234', icon: Users },
-  { label: 'Projects Submitted', value: '1,247', icon: FolderKanban },
-  { label: 'Community Comments', value: '592', icon: MessageSquare },
-  { label: 'Ideas Available', value: '87', icon: Lightbulb },
-];
-
-// Campaign progress (placeholder) - Goal is 4k visits, not projects
-const visitsGoal = 4000;
-const visitsCompleted = 1247;
-const progressPercentage = (visitsCompleted / visitsGoal) * 100;
-
 export default function Home() {
+  // Fetch metrics (real data!)
+  const { data: metrics, isLoading: metricsLoading } = usePublicMetrics();
+
   // Fetch free tier ideas for the featured section
   const { data: ideasResponse, isLoading: ideasLoading, error: ideasError } = useIdeas(
     { free_tier: true, limit: 5 },
     { retry: false }
   );
   const featuredIdeas = ideasResponse?.data || [];
+
+  // Calculate dynamic stats from metrics
+  const stats = [
+    {
+      label: 'Registered Users',
+      value: metrics?.totalUsers ? metrics.totalUsers.toLocaleString() : '---',
+      icon: Users
+    },
+    {
+      label: 'Projects Submitted',
+      value: metrics?.totalProjects ? metrics.totalProjects.toLocaleString() : '0',
+      icon: FolderKanban
+    },
+    {
+      label: 'Community Comments',
+      value: metrics?.totalComments ? metrics.totalComments.toLocaleString() : '---',
+      icon: MessageSquare
+    },
+    {
+      label: 'Ideas Available',
+      value: metrics?.totalIdeas ? metrics.totalIdeas.toString() : '87',
+      icon: Lightbulb
+    },
+  ];
+
+  // Campaign progress (real data!) - Goal is 4k VISITS (page views)
+  const visitsGoal = metrics?.visitsGoal || 4000;
+  const visitsCompleted = metrics?.visitsProgress || 0;
+  const progressPercentage = visitsCompleted > 0 ? (visitsCompleted / visitsGoal) * 100 : 0;
   
   // Debug logging for blank ideas issue
   useEffect(() => {
@@ -502,20 +522,33 @@ export default function Home() {
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                  {stats.map((stat, index) => {
-                    const Icon = stat.icon;
-                    return (
-                      <div key={index} className="space-y-2">
+                  {metricsLoading ? (
+                    // Loading skeletons
+                    [1, 2, 3, 4].map((i) => (
+                      <div key={i} className="space-y-2">
                         <div className="flex justify-center">
-                          <Icon className="h-8 w-8 text-primary" />
+                          <Skeleton className="h-8 w-8 rounded-full" />
                         </div>
-                        <div className="text-3xl sm:text-4xl font-bold text-primary">
-                          {stat.value}
-                        </div>
-                        <div className="text-sm text-muted-foreground">{stat.label}</div>
+                        <Skeleton className="h-10 w-20 mx-auto" />
+                        <Skeleton className="h-4 w-24 mx-auto" />
                       </div>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    stats.map((stat, index) => {
+                      const Icon = stat.icon;
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex justify-center">
+                            <Icon className="h-8 w-8 text-primary" />
+                          </div>
+                          <div className="text-3xl sm:text-4xl font-bold text-primary">
+                            {stat.value}
+                          </div>
+                          <div className="text-sm text-muted-foreground">{stat.label}</div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </CardContent>
