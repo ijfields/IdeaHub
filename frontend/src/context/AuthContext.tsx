@@ -270,10 +270,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     displayName?: string
   ) => {
     try {
+      // Get the site URL for email redirect (defaults to current origin in dev)
+      const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: siteUrl,
           data: {
             display_name: displayName || null,
           },
