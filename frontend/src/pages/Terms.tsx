@@ -7,8 +7,12 @@
 
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePublicMetrics } from '@/hooks/useMetrics';
 
 export default function Terms() {
+  const { data: metrics } = usePublicMetrics();
+  const totalIdeas = metrics?.totalIdeas || 0;
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto py-12 px-4">
@@ -33,7 +37,7 @@ export default function Terms() {
                 AI Ideas Hub is a platform that provides curated AI project ideas for professionals. The Platform offers:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li>Access to 87 curated AI project ideas</li>
+                <li>Access to {totalIdeas || ''} curated AI project ideas</li>
                 <li>Community features including comments and project sharing</li>
                 <li>Educational content and resources</li>
                 <li>Campaign-related promotions and challenges</li>

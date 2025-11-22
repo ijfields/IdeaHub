@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
+import { usePublicMetrics } from '@/hooks/useMetrics';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { data: metrics } = usePublicMetrics();
+  const totalIdeas = metrics?.totalIdeas || 0;
 
   const footerLinks = {
     company: [
@@ -55,7 +58,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Discover 87 curated AI project ideas designed for professionals curious about AI.
+              Discover {totalIdeas || ''} curated AI project ideas designed for professionals curious about AI.
             </p>
           </div>
 

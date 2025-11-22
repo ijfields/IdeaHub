@@ -2,7 +2,7 @@
  * Home Page
  *
  * Landing page for AI Ideas Hub.
- * Comprehensive homepage showcasing 87 AI project ideas platform with campaign information,
+ * Comprehensive homepage showcasing AI project ideas platform with campaign information,
  * featured ideas, categories, and call-to-actions.
  */
 
@@ -85,7 +85,7 @@ export default function Home() {
     },
     {
       label: 'Ideas Available',
-      value: metrics?.totalIdeas ? metrics.totalIdeas.toString() : '87',
+      value: metrics?.totalIdeas ? metrics.totalIdeas.toString() : '---',
       icon: Lightbulb
     },
   ];
@@ -143,7 +143,7 @@ export default function Home() {
             {/* Hero Headline */}
             <div className="space-y-4">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-                87 AI Project Ideas
+                {metrics?.totalIdeas || '---'} AI Project Ideas
                 <br />
                 <span 
                   className="inline-block"
@@ -361,7 +361,7 @@ export default function Home() {
                 to="/signup" 
                 className="flex items-center text-white rounded-md btn-gradient-link"
               >
-                Sign Up for 82 More Ideas
+                Sign Up for {metrics?.totalIdeas ? metrics.totalIdeas - 5 : ''} More Ideas
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
@@ -401,7 +401,7 @@ export default function Home() {
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold">Choose an Idea</h3>
                     <p className="text-muted-foreground">
-                      Browse 87 curated projects across 13 categories
+                      Browse {metrics?.totalIdeas || ''} curated projects across 13 categories
                     </p>
                   </div>
                 </div>
@@ -567,7 +567,7 @@ export default function Home() {
                   Ready to Build Your First AI Project?
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Create a free account to access all 87 ideas and start using your free Anthropic
+                  Create a free account to access all {metrics?.totalIdeas || ''} ideas and start using your free Anthropic
                   Claude Code Web credits today
                 </p>
               </div>

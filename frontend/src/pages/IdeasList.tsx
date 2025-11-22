@@ -2,7 +2,7 @@
  * Ideas List Page
  *
  * Displays the list of AI project ideas with filtering and search.
- * Shows 5 free ideas for guests, all 87 ideas for registered users.
+ * Shows 5 free ideas for guests, all ideas for registered users.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -59,7 +59,7 @@ const CATEGORIES = [
 ];
 
 // Tools list
-const TOOLS = ['Claude', 'Bolt', 'Lovable', 'Google AI Studio'];
+const TOOLS = ['Claude', 'Bolt', 'Lovable', 'Google AI Studio', 'Manus AI', 'Youware AI'];
 
 // Difficulty levels
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced'];
@@ -111,11 +111,11 @@ export default function IdeasList() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Build API filters
+  // Build API filters - fetch all ideas for client-side filtering/sorting/pagination
   const apiFilters: IdeaFilters = useMemo(() => {
     const filters: IdeaFilters = {
-      page: currentPage,
-      limit: IDEAS_PER_PAGE,
+      page: 1,
+      limit: 1000, // Fetch all ideas for client-side pagination
       search: debouncedSearch || undefined,
     };
 
@@ -123,12 +123,13 @@ export default function IdeasList() {
       filters.free_tier = true;
     }
 
-    if (selectedCategories.length > 0) {
-      filters.category = selectedCategories[0]; // API might support single category
+    // Only send single-value filters to API
+    if (selectedCategories.length === 1) {
+      filters.category = selectedCategories[0];
     }
 
-    if (selectedDifficulties.length > 0) {
-      filters.difficulty = selectedDifficulties[0]; // API might support single difficulty
+    if (selectedDifficulties.length === 1) {
+      filters.difficulty = selectedDifficulties[0];
     }
 
     if (selectedTools.length > 0) {
@@ -137,7 +138,6 @@ export default function IdeasList() {
 
     return filters;
   }, [
-    currentPage,
     debouncedSearch,
     selectedCategories,
     selectedDifficulties,
@@ -152,6 +152,7 @@ export default function IdeasList() {
     enabled: true,
   });
   const ideas = data?.data || [];
+  const totalIdeasFromApi = data?.pagination?.total || 0;
 
   // Debug logging for authenticated users
   useEffect(() => {
@@ -405,8 +406,8 @@ export default function IdeasList() {
           <h1 className="text-4xl font-bold">AI Project Ideas</h1>
           <p className="text-lg text-muted-foreground">
             {isAuthenticated
-              ? '87 Ideas Available - Discover the perfect project for your skills'
-              : '5 Free Ideas - Sign up to unlock all 87 ideas'}
+              ? `${totalIdeasFromApi || 'All'} Ideas Available - Discover the perfect project for your skills`
+              : `5 Free Ideas - Sign up to unlock all ${totalIdeasFromApi || ''} ideas`}
           </p>
         </div>
 
@@ -512,7 +513,7 @@ export default function IdeasList() {
                     <Lock className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg mb-2">
-                        Sign up to see all 87 ideas
+                        Sign up to see all {totalIdeasFromApi || ''} ideas
                       </h3>
                       <p className="text-sm text-muted-foreground mb-4">
                         Get full access to our curated collection of AI project ideas.
