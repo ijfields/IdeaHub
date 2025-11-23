@@ -132,16 +132,13 @@ export default function IdeasList() {
       filters.difficulty = selectedDifficulties[0];
     }
 
-    if (selectedTools.length > 0) {
-      filters.tools = selectedTools;
-    }
+    // Note: tools filter is applied client-side only since backend doesn't support it as query param
 
     return filters;
   }, [
     debouncedSearch,
     selectedCategories,
     selectedDifficulties,
-    selectedTools,
     isAuthenticated,
   ]);
 
