@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -31,23 +32,18 @@ export function useDashboardMetrics() {
   return useQuery<DashboardMetrics>({
     queryKey: ['metrics', 'dashboard'],
     queryFn: async () => {
-      // Get auth token from localStorage (Supabase stores it there)
-      const supabaseAuth = localStorage.getItem('supabase.auth.token');
-      let token = null;
+      // Get auth token from Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
-      if (supabaseAuth) {
-        try {
-          const authData = JSON.parse(supabaseAuth);
-          token = authData?.access_token || authData?.currentSession?.access_token;
-        } catch (e) {
-          console.error('Failed to parse auth token:', e);
-        }
+      if (!token) {
+        throw new Error('Not authenticated');
       }
 
       const response = await fetch(`${API_URL}/api/metrics/dashboard`, {
         headers: {
           'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
+          Authorization: `Bearer ${token}`,
         },
       });
 
