@@ -56,7 +56,19 @@ export function useDashboardMetrics() {
       }
 
       const data = await response.json();
-      return data.data;
+      // Backend returns snake_case, map to camelCase
+      return {
+        totalUsers: data.total_registrations || 0,
+        totalProjects: data.total_projects || 0,
+        totalComments: data.total_comments || 0,
+        totalIdeas: data.total_ideas || 0,
+        totalPageViews: data.total_page_views || 0,
+        uniqueVisitors: data.unique_visitors || 0,
+        recentRegistrations: data.recent_registrations || [],
+        mostViewedIdeas: data.most_viewed_ideas || [],
+        mostCommentedIdeas: data.most_commented_ideas || [],
+        mostBuiltIdeas: data.most_built_ideas || [],
+      };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
@@ -78,7 +90,14 @@ export function useProjectsGoal() {
       }
 
       const data = await response.json();
-      return data.data;
+      // Backend returns snake_case, map to interface format
+      return {
+        total_projects: data.total_projects || 0,
+        total_ideas: data.total_ideas || 0,
+        campaign_goal: data.goal || 4000,
+        progress_percentage: data.percentage || 0,
+        days_remaining: 0, // Calculated on frontend if needed
+      };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

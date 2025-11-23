@@ -20,6 +20,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
+import { usePublicMetrics } from '@/hooks/useMetrics';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -76,6 +77,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const { toast } = useToast();
+  const { data: metrics } = usePublicMetrics();
+  const totalIdeas = metrics?.totalIdeas || 0;
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -113,7 +116,7 @@ export default function Signup() {
       // Show success toast
       toast({
         title: 'Account Created!',
-        description: 'Welcome to IdeaHub! You can now explore all 87 AI project ideas.',
+        description: `Welcome to IdeaHub! You can now explore all ${totalIdeas || ''} AI project ideas.`,
       });
 
       // Redirect to home page
@@ -134,7 +137,7 @@ export default function Signup() {
             Create an Account
           </CardTitle>
           <CardDescription className="text-center">
-            Join IdeaHub and unlock all 87 AI project ideas
+            Join IdeaHub and unlock all {totalIdeas || ''} AI project ideas
           </CardDescription>
           <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
             <p className="text-xs text-blue-800 dark:text-blue-200 text-center">

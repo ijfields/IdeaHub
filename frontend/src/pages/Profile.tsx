@@ -85,7 +85,7 @@ export default function Profile() {
 
   // Fetch total ideas count for authenticated users
   const { data: ideasData } = useIdeas({ limit: 1 }, { retry: false });
-  const allIdeasCount = ideasData?.pagination?.total || 87; // Fallback to 87 if not available
+  const allIdeasCount = ideasData?.pagination?.total || 0; // Get from API
 
   const {
     register,
@@ -467,7 +467,7 @@ export default function Profile() {
                     Registered Member
                   </Badge>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Full access to all {allIdeasCount || 87} project ideas
+                    Full access to all {allIdeasCount || ''} project ideas
                   </p>
                 </div>
               </div>
