@@ -115,7 +115,7 @@ export default function IdeasList() {
   const apiFilters: IdeaFilters = useMemo(() => {
     const filters: IdeaFilters = {
       page: 1,
-      limit: 1000, // Fetch all ideas for client-side pagination
+      limit: 100, // Fetch enough ideas for client-side pagination
       search: debouncedSearch || undefined,
     };
 
