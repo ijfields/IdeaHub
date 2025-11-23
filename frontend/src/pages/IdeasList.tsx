@@ -38,6 +38,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
+import { usePublicMetrics } from '@/hooks/useMetrics';
 import { useIdeas } from '@/hooks/useIdeas';
 import type { Idea, IdeaFilters } from '@/lib/api-client';
 
@@ -85,6 +86,8 @@ const IDEAS_PER_PAGE = 12;
 export default function IdeasList() {
   const { user } = useAuth();
   const isAuthenticated = !!user;
+  const { data: publicMetrics } = usePublicMetrics();
+  const totalIdeasInDatabase = publicMetrics?.totalIdeas || 0;
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filter state - initialize from URL params
@@ -403,8 +406,8 @@ export default function IdeasList() {
           <h1 className="text-4xl font-bold">AI Project Ideas</h1>
           <p className="text-lg text-muted-foreground">
             {isAuthenticated
-              ? `${totalIdeasFromApi || 'All'} Ideas Available - Discover the perfect project for your skills`
-              : `5 Free Ideas - Sign up to unlock all ${totalIdeasFromApi || ''} ideas`}
+              ? `${totalIdeasFromApi || totalIdeasInDatabase || 'All'} Ideas Available - Discover the perfect project for your skills`
+              : `5 Free Ideas - Sign up to unlock all ${totalIdeasInDatabase || ''} ideas`}
           </p>
         </div>
 
@@ -510,7 +513,7 @@ export default function IdeasList() {
                     <Lock className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg mb-2">
-                        Sign up to see all {totalIdeasFromApi || ''} ideas
+                        Sign up to see all {totalIdeasInDatabase || ''} ideas
                       </h3>
                       <p className="text-sm text-muted-foreground mb-4">
                         Get full access to our curated collection of AI project ideas.

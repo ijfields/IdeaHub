@@ -26,9 +26,9 @@ interface ProjectsGoalMetrics {
 
 /**
  * Hook to fetch dashboard metrics (admin view)
- * Requires authentication
+ * Requires authentication - only runs query if user has a session
  */
-export function useDashboardMetrics() {
+export function useDashboardMetrics(enabled = true) {
   return useQuery<DashboardMetrics>({
     queryKey: ['metrics', 'dashboard'],
     queryFn: async () => {
@@ -67,7 +67,8 @@ export function useDashboardMetrics() {
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1,
+    retry: false, // Don't retry auth errors
+    enabled, // Allow disabling the query
   });
 }
 
